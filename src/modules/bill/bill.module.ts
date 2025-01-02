@@ -5,10 +5,12 @@ import { BillService } from './services/bill/bill.service';
 import { BillController } from './controllers/bill/bill.controller';
 import { BillAssignmentService } from './services/bill-assignment/bill-assignment.service';
 import { AwesomeBillAssignment } from './models/bill-assignment.entity';
+import { AwesomeBillAttachment } from './models/bill-attachment.entity';
+import { BillAttachmentService } from './services/bill-attachment/bill-attachment.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AwesomeBill,AwesomeBillAssignment])],
-  providers: [BillService, BillAssignmentService],
+  imports: [TypeOrmModule.forFeature([AwesomeBill,AwesomeBillAssignment,AwesomeBillAttachment])],
+  providers: [BillService, BillAssignmentService, BillAttachmentService],
   controllers: [BillController],
 })
 export class BillModule {}
