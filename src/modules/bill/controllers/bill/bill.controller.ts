@@ -225,7 +225,7 @@ export class BillController {
 
   //@UseGuards(AuthTokenGuard)
   @Put('attachment/:attachmentId')
-  //@AuditLog('Update Department')
+  //@AuditLog('Update attachment')
   @Header('Cache-Control', 'none')
   updateAttachment(
     @Param('attachmentId') attachmentId: string,
