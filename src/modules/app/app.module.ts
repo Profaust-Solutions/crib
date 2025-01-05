@@ -5,6 +5,8 @@ import { DatabaseModule, SharedModule } from '@app/common';
 import { BillModule } from '../bill/bill.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PropertyModule } from '../property/property.module';
+import { UserModule } from '../user/user.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -26,7 +28,7 @@ import { PropertyModule } from '../property/property.module';
         },
       },
     ]),
-    DatabaseModule, SharedModule, BillModule,PropertyModule],
+    DatabaseModule, SharedModule, BillModule,PropertyModule,UserModule,AuthModule],
   controllers: [AppController],
   providers: [AppService],
 })

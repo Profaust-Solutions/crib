@@ -6,16 +6,16 @@ export abstract class BaseModel extends BaseEntity{
 
     @CreateDateColumn({name:'created_date',
         type: 'timestamp',})
-    public createdDate?:Date;
+    public created_date?:Date;
 
     @UpdateDateColumn({name:'modified_date',
         type: 'timestamp',})
-    public modifiedDate?:Date;
+    public modified_date?:Date;
 
     @Column('varchar',{
         name:'created_by',length: '255',
     nullable: true})
-    public createdBy?:string;
+    public created_by?:string;
 
     @Column({ nullable: true, default: false, name: 'soft_delete' })
     public soft_delete?: boolean
