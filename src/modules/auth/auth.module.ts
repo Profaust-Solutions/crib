@@ -7,9 +7,12 @@ import { UserService } from '../user/services/user.service';
 import { JwtStrategy } from '@app/common/shared/strategies/jwt.strategy';
 import {ConfigService } from '@nestjs/config';
 import { ConfigModule } from '@app/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { OtpAuthentication } from './models/otp-authentication.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([OtpAuthentication]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
