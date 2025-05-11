@@ -15,7 +15,7 @@ import {
   ApiResponse,
   ResponseCodes,
 } from '@app/common/shared/models/api-response';
-import { Observable, forkJoin, map, switchMap } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { UpdateResult } from 'typeorm';
 import { Property } from '../../models/property.entity';
 import { ApartmentService } from '../../services/apartment/apartment.service';
@@ -204,6 +204,11 @@ export class PropertyController {
           response.code = ResponseCodes.FAILED.code;
           response.message = ResponseCodes.FAILED.message;
         }
+      }),catchError((error) => {
+        console.log(error);
+        response.code = ResponseCodes.FAILED.code;
+        response.message = ResponseCodes.FAILED.message;
+        return of(response);
       }),
     );
   }
