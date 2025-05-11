@@ -204,7 +204,8 @@ export class PropertyController {
           response.code = ResponseCodes.FAILED.code;
           response.message = ResponseCodes.FAILED.message;
         }
-      }),catchError((error) => {
+      }),
+      catchError((error) => {
         console.log(error);
         response.code = ResponseCodes.FAILED.code;
         response.message = ResponseCodes.FAILED.message;
@@ -248,6 +249,29 @@ export class PropertyController {
           response.code = ResponseCodes.SUCCESS.code;
           response.message = ResponseCodes.SUCCESS.message;
           response.data = apartments;
+        } else {
+          response.code = ResponseCodes.NO_RECORD_FOUND.code;
+          response.message = ResponseCodes.NO_RECORD_FOUND.message;
+        }
+        return response;
+      }),
+    );
+  }
+
+  //@UseGuards(AuthTokenGuard)
+  @Get('apartment/:apartmentId')
+  //@AuditLog('Get Property')
+  @Header('Cache-Control', 'none')
+  findOneApartment(
+    @Param('apartmentId') apartmentId: string,
+  ): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    return this.apartmentService.findOne(apartmentId).pipe(
+      map((apartmentPagable) => {
+        if (apartmentPagable) {
+          response.code = ResponseCodes.SUCCESS.code;
+          response.message = ResponseCodes.SUCCESS.message;
+          response.data = apartmentPagable;
         } else {
           response.code = ResponseCodes.NO_RECORD_FOUND.code;
           response.message = ResponseCodes.NO_RECORD_FOUND.message;
