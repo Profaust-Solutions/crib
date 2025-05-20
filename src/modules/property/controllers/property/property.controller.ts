@@ -243,6 +243,7 @@ export class PropertyController {
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
 
+    
     return this.apartmentService.findByPropertyId(propertyId).pipe(
       map((apartments) => {
         if (apartments.length > 0) {
