@@ -155,18 +155,15 @@ export class PropertyController {
   @Post('apartment/create')
   //@AuditLog('Create apartment')
   @Header('Cache-Control', 'none')
-  createApartment(@Body() apartments: Apartment[]): Observable<ApiResponse> {
+  createApartment(@Body() apartment: Apartment): Observable<ApiResponse> {
     let response = new ApiResponse();
-    let bulkRequest = apartments.map((apartment: Apartment) => {
-      return this.apartmentService.create(apartment);
-    });
-    const createdApartmentResult$ = forkJoin(bulkRequest);
+    const createdApartmentResult$ = this.apartmentService.create(apartment);
 
     return createdApartmentResult$.pipe(
-      map((createdApartment: Apartment[]) => {
+      map((createdApartment: Apartment) => {
         response.code = ResponseCodes.SUCCESS.code;
         response.message = ResponseCodes.SUCCESS.message;
-        response.data = [...createdApartment];
+        response.data = { ...createdApartment };
         return response;
       }),
     );
@@ -243,7 +240,6 @@ export class PropertyController {
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
 
-    
     return this.apartmentService.findByPropertyId(propertyId).pipe(
       map((apartments) => {
         if (apartments.length > 0) {
