@@ -20,6 +20,8 @@ import { UpdateResult } from 'typeorm';
 import { Property } from '../../models/property.entity';
 import { ApartmentService } from '../../services/apartment/apartment.service';
 import { Apartment } from '../../models/apartment.entity';
+import { TenantService } from '../../services/tenant/tenant.service';
+import { Tenant } from '../../models/apartment_tenant.entity';
 
 @Controller('properties')
 export class PropertyController {
@@ -27,6 +29,7 @@ export class PropertyController {
   constructor(
     public propertyService: PropertyService,
     public apartmentService: ApartmentService,
+    public tenantService: TenantService,
   ) {}
 
   @Post('create')
@@ -269,6 +272,113 @@ export class PropertyController {
           response.code = ResponseCodes.SUCCESS.code;
           response.message = ResponseCodes.SUCCESS.message;
           response.data = apartmentPagable;
+        } else {
+          response.code = ResponseCodes.NO_RECORD_FOUND.code;
+          response.message = ResponseCodes.NO_RECORD_FOUND.message;
+        }
+        return response;
+      }),
+    );
+  }
+
+  //@UseGuards(AuthTokenGuard)
+  @Get('apartment/:apartmentId/tenants')
+  //@AuditLog('Get Property')
+  @Header('Cache-Control', 'none')
+  findTenants(
+     @Param('apartmentId') apartmentId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    return this.tenantService.findByApartmentId(apartmentId,{ page, limit }).pipe(
+      map((tenantPagable) => {
+        const tenantItems = tenantPagable.items;
+        const tenantItemsMeta = tenantPagable.meta;
+        if (tenantItems.length > 0) {
+          response.code = ResponseCodes.SUCCESS.code;
+          response.message = ResponseCodes.SUCCESS.message;
+          response.data = tenantItems;
+          response.meta = tenantItemsMeta;
+        } else {
+          response.code = ResponseCodes.NO_RECORD_FOUND.code;
+          response.message = ResponseCodes.NO_RECORD_FOUND.message;
+        }
+        return response;
+      }),
+    );
+  }
+  
+  @Post('apartment/assign-tenant')
+  //@AuditLog('apartment assign-tenant')
+  @Header('Cache-Control', 'none')
+  assignTenant(@Body() tenant: Tenant): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    const createdTenantResult$ = this.tenantService.create(tenant);
+
+    return createdTenantResult$.pipe(
+      map((createdTenant: Tenant) => {
+        response.code = ResponseCodes.SUCCESS.code;
+        response.message = ResponseCodes.SUCCESS.message;
+        response.data = { ...createdTenant };
+        return response;
+      }),
+    );
+  }
+
+  @Post('apartment/tenant/:tenantId')
+  //@AuditLog('apartment assign-tenant')
+  @Header('Cache-Control', 'none')
+  updateTenant(
+    @Param('tenantId') tenantId: string,
+    @Body() tenant: Tenant,
+  ): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    tenant.tenant_id = tenantId;
+
+    return this.tenantService.update(tenant).pipe(
+      switchMap((tenant: UpdateResult) => {
+        if (tenant.affected > 0) {
+          response.code = ResponseCodes.SUCCESS.code;
+          response.message = ResponseCodes.SUCCESS.message;
+          return this.tenantService.findOne(tenantId).pipe(
+            map((tenant) => {
+              if (tenant) {
+                response.code = ResponseCodes.SUCCESS.code;
+                response.message = ResponseCodes.SUCCESS.message;
+                response.data = tenant;
+              } else {
+                response.code = ResponseCodes.NO_RECORD_FOUND.code;
+                response.message = ResponseCodes.NO_RECORD_FOUND.message;
+              }
+              return response;
+            }),
+          );
+        } else {
+          response.code = ResponseCodes.FAILED.code;
+          response.message = ResponseCodes.FAILED.message;
+        }
+      }),
+      catchError((error) => {
+        console.log(error);
+        response.code = ResponseCodes.FAILED.code;
+        response.message = ResponseCodes.FAILED.message;
+        return of(response);
+      }),
+    );
+  }
+
+  //@UseGuards(AuthTokenGuard)
+  @Delete('apartment/tenant/:tenantId')
+  //@AuditLog('Delete tenant')
+  @Header('Cache-Control', 'none')
+  deleteTenant(@Param('tenantId') tenantId: string): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    return this.tenantService.delete(tenantId).pipe(
+      map((tenant) => {
+        if (tenant.affected > 0) {
+          response.code = ResponseCodes.SUCCESS.code;
+          response.message = ResponseCodes.SUCCESS.message;
         } else {
           response.code = ResponseCodes.NO_RECORD_FOUND.code;
           response.message = ResponseCodes.NO_RECORD_FOUND.message;
