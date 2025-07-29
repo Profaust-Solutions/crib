@@ -29,6 +29,10 @@ export const ResponseCodes = {
     INACTIVE_ACCOUNT:{
         code:'004',
         message:'inactive account'
+    },
+    EXPECTION_ERROR:{
+        code:'500',
+        message:'internal server error'
     }
 
 }

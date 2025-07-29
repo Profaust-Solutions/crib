@@ -1,14 +1,9 @@
 import {
-  ApiResponse,
-  ResponseCodes,
-} from '@app/common/shared/models/api-response';
-import {
   Body,
   Controller,
   Delete,
   Get,
   Header,
-  HttpCode,
   Logger,
   Param,
   Post,
@@ -17,34 +12,44 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { Observable, iif, map, switchMap } from 'rxjs';
-import { User } from '../models/user.entity';
-import { UserService } from '../services/user.service';
+import { SubscriptionService } from '../services/subscription.service';
+import { SubscriptionPlan } from '../models/subscription_plan.entity';
+import {
+  ApiResponse,
+  ResponseCodes,
+} from '@app/common/shared/models/api-response';
+import { map, Observable, switchMap } from 'rxjs';
 import { UpdateResult } from 'typeorm';
 import { AuthTokenGuard } from '@app/common/shared/guards/auth-token.guard';
 
-@Controller('users')
-export class UserController {
-  private readonly logger = new Logger(UserController.name);
-  constructor(public userService: UserService) {}
-  @Post('create')
-  //@AuditLog('Create User')
+@Controller('subscriptions')
+export class SubscriptionController {
+  private readonly logger = new Logger(SubscriptionController.name);
+  constructor(public subscriptionService: SubscriptionService) {}
+
+  @UseGuards(AuthTokenGuard)
+  @Post('plan')
   @Header('Cache-Control', 'none')
-  create(@Body() user: User): Observable<ApiResponse> {
+  create(
+    @Body() plan: SubscriptionPlan,
+    @Req() requset,
+  ): Observable<ApiResponse> {
     let response = new ApiResponse();
-    const createdUserResult$ = this.userService.create(user);
-    return createdUserResult$.pipe(
-      map((createdUser: User) => {
+    const userId = requset.user['id'];
+    plan.created_by = userId;
+    const createdPlanResult$ = this.subscriptionService.createPlan(plan);
+    return createdPlanResult$.pipe(
+      map((createdPlan: SubscriptionPlan) => {
         response.code = ResponseCodes.SUCCESS.code;
         response.message = ResponseCodes.SUCCESS.message;
-        response.data = { ...createdUser };
+        response.data = { ...createdPlan };
         return response;
       }),
     );
   }
 
-  @Get('')
-  // @AuditLog('Get Users')
+  @UseGuards(AuthTokenGuard)
+  @Get('plans')
   @Header('Cache-Control', 'none')
   findAll(
     @Query('page') page: number = 1,
@@ -52,15 +57,15 @@ export class UserController {
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
 
-    return this.userService.findAll({ page, limit }).pipe(
-      map((usersPagable) => {
-        const userItems = usersPagable.items;
-        const userItemsMeta = usersPagable.meta;
-        if (userItems.length > 0) {
+    return this.subscriptionService.findAllPlans({ page, limit }).pipe(
+      map((plansPagable) => {
+        const planItems = plansPagable.items;
+        const planItemsMeta = plansPagable.meta;
+        if (planItems.length > 0) {
           response.code = ResponseCodes.SUCCESS.code;
           response.message = ResponseCodes.SUCCESS.message;
-          response.data = userItems;
-          response.meta = userItemsMeta;
+          response.data = planItems;
+          response.meta = planItemsMeta;
         } else {
           response.code = ResponseCodes.NO_RECORD_FOUND.code;
           response.message = ResponseCodes.NO_RECORD_FOUND.message;
@@ -71,25 +76,24 @@ export class UserController {
   }
 
   @UseGuards(AuthTokenGuard)
-  @Get(':userId')
-  //@AuditLog('Get User')
+  @Get('plans/:planId')
+  //@AuditLog('Get SubscriptionPlan')
   @Header('Cache-Control', 'none')
   findOne(
-    @Param('userId') userId: string,
+    @Param('planId') planId: string,
     @Req() requset,
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
-    const user = requset.user;
-    console.log('user: ' + JSON.stringify(user));
-    const findById$ = this.userService.findOne(userId);
-    const findByMobileNumber$ = this.userService.findByMobileNumber(userId);
-    return iif(() => userId.length > 19, findById$, findByMobileNumber$).pipe(
-      map((user) => {
+    const userId = requset.user['id'];
+    //console.log('plan: ' + JSON.stringify(plan));
+    const findById$ = this.subscriptionService.findOnePlan(planId);
+    return findById$.pipe(
+      map((plan) => {
         try {
-          if (user.hasId) {
+          if (plan.hasId) {
             response.code = ResponseCodes.SUCCESS.code;
             response.message = ResponseCodes.SUCCESS.message;
-            response.data = user;
+            response.data = plan;
           } else {
             response.code = ResponseCodes.NO_RECORD_FOUND.code;
             response.message = ResponseCodes.NO_RECORD_FOUND.message;
@@ -104,27 +108,27 @@ export class UserController {
     );
   }
 
-  @Put(':userId')
-  //@AuditLog('Update User')
+  @UseGuards(AuthTokenGuard)
+  @Put('plans/:planId')
   @Header('Cache-Control', 'none')
   update(
-    @Param('userId') userId: string,
-    @Body() user: User,
+    @Param('planId') planId: string,
+    @Body() plan: SubscriptionPlan,
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
-    user.id = userId;
-    return this.userService.update(user).pipe(
-      switchMap((user: UpdateResult) => {
-        if (user.affected > 0) {
+    plan.id = planId;
+    return this.subscriptionService.updatePlan(plan).pipe(
+      switchMap((plan: UpdateResult) => {
+        if (plan.affected > 0) {
           response.code = ResponseCodes.SUCCESS.code;
           response.message = ResponseCodes.SUCCESS.message;
 
-          return this.userService.findOne(userId).pipe(
-            map((user) => {
-              if (user.hasId) {
+          return this.subscriptionService.findOnePlan(planId).pipe(
+            map((plan) => {
+              if (plan.hasId) {
                 response.code = ResponseCodes.SUCCESS.code;
                 response.message = ResponseCodes.SUCCESS.message;
-                response.data = user;
+                response.data = plan;
               } else {
                 response.code = ResponseCodes.NO_RECORD_FOUND.code;
                 response.message = ResponseCodes.NO_RECORD_FOUND.message;
@@ -140,12 +144,12 @@ export class UserController {
     );
   }
 
-  @Delete(':userId')
-  //@AuditLog('Delete user')
+  @UseGuards(AuthTokenGuard)
+  @Delete('plans/:planId')
   @Header('Cache-Control', 'none')
-  delete(@Param('userId') userId: string): Observable<ApiResponse> {
+  delete(@Param('planId') planId: string): Observable<ApiResponse> {
     let response = new ApiResponse();
-    return this.userService.softDelete(userId).pipe(
+    return this.subscriptionService.deletePlan(planId).pipe(
       map((role) => {
         if (role.affected > 0) {
           response.code = ResponseCodes.SUCCESS.code;

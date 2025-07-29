@@ -35,4 +35,10 @@ export class BillService {
     return from(this.AwesomeBillRepository.softDelete(billId));
   }
 
+  public findByTenantId = (userId: string, options: IPaginationOptions) =>
+    from(
+      paginate<AwesomeBill>(this.AwesomeBillRepository, options, {
+        user_id: userId,
+      }),
+    );
 }

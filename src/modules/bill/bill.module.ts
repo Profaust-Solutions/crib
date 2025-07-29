@@ -7,9 +7,10 @@ import { BillAssignmentService } from './services/bill-assignment/bill-assignmen
 import { AwesomeBillAssignment } from './models/bill-assignment.entity';
 import { AwesomeBillAttachment } from './models/bill-attachment.entity';
 import { BillAttachmentService } from './services/bill-attachment/bill-attachment.service';
+import { SharedModule } from '@app/common';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AwesomeBill,AwesomeBillAssignment,AwesomeBillAttachment])],
+  imports: [TypeOrmModule.forFeature([AwesomeBill,AwesomeBillAssignment,AwesomeBillAttachment]),SharedModule],
   providers: [BillService, BillAssignmentService, BillAttachmentService],
   controllers: [BillController],
 })

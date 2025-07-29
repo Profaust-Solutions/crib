@@ -61,6 +61,7 @@ export class User extends BaseModel {
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(this.password, salt);
     this.password = hash;
+    this.profile_image = `https://dummyimage.com/300.png/09f/fff&text=${this.username.substring(0, 2)}`;
   }
 
   @BeforeUpdate()
@@ -77,5 +78,8 @@ export class User extends BaseModel {
   afterLoadListener() {
     //this.email = this.email.toLowerCase();
     //this.password = undefined;
+    if (this.profile_image == null) {
+      this.profile_image = `https://dummyimage.com/300.png/09f/fff&text=${this.username.substring(0, 2)}`;
+    }
   }
 }

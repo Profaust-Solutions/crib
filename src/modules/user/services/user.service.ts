@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IPaginationOptions, paginate } from 'nestjs-typeorm-paginate';
 import { Observable, from } from 'rxjs';
 import { Repository } from 'typeorm';
 import { User } from '../models/user.entity';
+import { REQUEST } from '@nestjs/core';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class UserService {
   constructor(
+    @Inject(REQUEST) private readonly request: Request,
     @InjectRepository(User) public readonly userRepository: Repository<User>,
   ) {
     //super(userRepository, { useSoftDelete: true })
@@ -20,13 +22,27 @@ export class UserService {
     from(this.userRepository.update(user.id, user));
   public findAll = (options: IPaginationOptions) =>
     from(paginate<User>(this.userRepository, options));
-  public findOne = (id: string) => from(this.userRepository.findOneBy({ id }));
-  public findByUsername = (username: string) => from(this.userRepository.findOneBy({ username }));
+  public findOne = (id: string) => from(this.findUser(id));
+  public findByUsername = (username: string) =>
+    from(this.userRepository.findOneBy({ username }));
+  public findByMobileNumber = (mobile_number: string) =>
+    from(this.userRepository.findOneBy({ mobile_number }));
   public delete = (userId: string) => from(this.userRepository.delete(userId));
   //public softDelete = (user: User) => from(this.userRepository.update(user.id, user));
 
   public softDelete(userId: string) {
     this.userRepository.update(userId, { soft_delete: true });
     return from(this.userRepository.softDelete(userId));
+  }
+
+  findUser(id: string) {
+    //if user role is admin
+    //return data for user id
+    const userRole = this.request['user']['role'];
+    const userId = this.request['user']['id'];
+    if (userRole.toUpperCase() == 'admin'.toUpperCase()) {
+      return this.userRepository.findOneBy({ id });
+    }
+    return this.userRepository.findOneBy({ id: userId });
   }
 }

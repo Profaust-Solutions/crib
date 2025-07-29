@@ -7,6 +7,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PropertyModule } from '../property/property.module';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
   imports: [
@@ -28,8 +29,16 @@ import { AuthModule } from '../auth/auth.module';
         },
       },
     ]),
-    DatabaseModule, SharedModule, BillModule,PropertyModule,UserModule,AuthModule],
+    DatabaseModule,
+    SharedModule,
+    BillModule,
+    PropertyModule,
+    UserModule,
+    AuthModule,
+    SubscriptionModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
+  exports: [SharedModule],
 })
 export class AppModule {}
