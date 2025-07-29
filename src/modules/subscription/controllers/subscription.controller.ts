@@ -21,6 +21,7 @@ import {
 import { map, Observable, switchMap } from 'rxjs';
 import { UpdateResult } from 'typeorm';
 import { AuthTokenGuard } from '@app/common/shared/guards/auth-token.guard';
+import { Subscription } from '../models/subscription.entity';
 
 @Controller('subscriptions')
 export class SubscriptionController {
@@ -30,7 +31,7 @@ export class SubscriptionController {
   @UseGuards(AuthTokenGuard)
   @Post('plan')
   @Header('Cache-Control', 'none')
-  create(
+  createPlan(
     @Body() plan: SubscriptionPlan,
     @Req() requset,
   ): Observable<ApiResponse> {
@@ -51,7 +52,7 @@ export class SubscriptionController {
   @UseGuards(AuthTokenGuard)
   @Get('plans')
   @Header('Cache-Control', 'none')
-  findAll(
+  findAllPlans(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ): Observable<ApiResponse> {
@@ -79,7 +80,7 @@ export class SubscriptionController {
   @Get('plans/:planId')
   //@AuditLog('Get SubscriptionPlan')
   @Header('Cache-Control', 'none')
-  findOne(
+  findOnePlan(
     @Param('planId') planId: string,
     @Req() requset,
   ): Observable<ApiResponse> {
@@ -111,7 +112,7 @@ export class SubscriptionController {
   @UseGuards(AuthTokenGuard)
   @Put('plans/:planId')
   @Header('Cache-Control', 'none')
-  update(
+  updateOnePlan(
     @Param('planId') planId: string,
     @Body() plan: SubscriptionPlan,
   ): Observable<ApiResponse> {
@@ -147,7 +148,7 @@ export class SubscriptionController {
   @UseGuards(AuthTokenGuard)
   @Delete('plans/:planId')
   @Header('Cache-Control', 'none')
-  delete(@Param('planId') planId: string): Observable<ApiResponse> {
+  deletePlan(@Param('planId') planId: string): Observable<ApiResponse> {
     let response = new ApiResponse();
     return this.subscriptionService.deletePlan(planId).pipe(
       map((role) => {
@@ -158,6 +159,28 @@ export class SubscriptionController {
           response.code = ResponseCodes.NO_RECORD_FOUND.code;
           response.message = ResponseCodes.NO_RECORD_FOUND.message;
         }
+        return response;
+      }),
+    );
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Post('create')
+  @Header('Cache-Control', 'none')
+  create(
+    @Body() subscription: Subscription,
+    @Req() requset,
+  ): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    const userId = requset.user['id'];
+    subscription.created_by = userId;
+    subscription.user_id = userId;
+    const createdSubscriptionResult$ = this.subscriptionService.subscribe(subscription);
+    return createdSubscriptionResult$.pipe(
+      map((createdSubscription: SubscriptionPlan) => {
+        response.code = ResponseCodes.SUCCESS.code;
+        response.message = ResponseCodes.SUCCESS.message;
+        response.data = { ...createdSubscription };
         return response;
       }),
     );

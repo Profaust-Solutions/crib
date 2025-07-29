@@ -4,8 +4,13 @@ import { SubscriptionPlan } from './subscription_plan.entity';
 
 @Entity('crib_subscriptions')
 export class Subscription extends BaseModel {
+
+  @Column({ unique: false, name: 'name', default: new Date().toISOString() })
+  name: String;
+
   @Column({ unique: false, name: 'user_id' })
   user_id: String;
+
   @Column({ unique: false, name: 'plan_id' })
   plan_id: String;
 

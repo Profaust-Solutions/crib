@@ -21,10 +21,10 @@ export class SubscriptionService {
     from(this.subscriptionPlanRepository.findOneBy({ id }));
 
   public updatePlan = (plan: SubscriptionPlan) =>
-    from(this.subscriptionRepository.update(plan.id, plan));
+    from(this.subscriptionPlanRepository.update(plan.id, plan));
 
   public deletePlan = (id: string) =>
-    from(this.subscriptionRepository.delete(id));
+    from(this.subscriptionPlanRepository.delete(id));
 
   public createPlan(plan: SubscriptionPlan): Observable<SubscriptionPlan> {
     const createdPlan = this.subscriptionPlanRepository.create(plan);
@@ -35,4 +35,12 @@ export class SubscriptionService {
     from(
       paginate<SubscriptionPlan>(this.subscriptionPlanRepository, options, {}),
     );
+
+  public subscribe(plan: Subscription): Observable<Subscription> {
+    const createdPlan = this.subscriptionRepository.create(plan);
+    return from(this.subscriptionRepository.save(createdPlan));
+  }
+
+    public findSubscriptions = (options: IPaginationOptions) =>
+      from(paginate<Subscription>(this.subscriptionRepository, options));
 }

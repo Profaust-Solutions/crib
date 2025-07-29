@@ -19,5 +19,5 @@ export class SubscriptionPlan extends BaseModel {
   public artwork?: string;
 
     @Column('simple-array')
-  public currency_allowed?: String[];
+  public allowed_currencies?: String[];
 }
