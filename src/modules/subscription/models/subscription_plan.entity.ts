@@ -12,12 +12,21 @@ export class SubscriptionPlan extends BaseModel {
   @Column('simple-array')
   public plan_features?: String[];
 
-  @Column({ unique: false, name: 'price' ,type: 'decimal', precision: 10, scale: 2})
+  @Column({
+    unique: false,
+    name: 'price',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+  })
   public price?: number;
+
+  @Column({ unique: false, name: 'billing_cycle', default: 'monthly' })
+  public billing_cycle?: string;
 
   @Column({ unique: false, type: 'longtext', name: 'artwork' })
   public artwork?: string;
 
-    @Column('simple-array')
+  @Column('simple-array')
   public allowed_currencies?: String[];
 }

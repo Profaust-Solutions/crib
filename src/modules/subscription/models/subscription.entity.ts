@@ -20,7 +20,10 @@ export class Subscription extends BaseModel {
   @Column({ name: 'end_date', type: 'timestamp' })
   end_date: Date;
 
-  @Column({ unique: false, name: 'status', default: 'ACTIVE' })
+  @Column({ name: 'next_billing_date', type: 'timestamp', nullable: true })
+  next_billing_date: Date;
+
+  @Column({ unique: false, name: 'status', default: 'PENDING_PAYMENT' })
   status: String;
 
   @Column({ unique: false, name: 'duration', default: 6 })
