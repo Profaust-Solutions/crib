@@ -1,5 +1,5 @@
 import { BaseModel } from '@app/common';
-import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne } from 'typeorm';
 import { SubscriptionPlan } from './subscription_plan.entity';
 
 @Entity('crib_subscriptions')
@@ -29,7 +29,7 @@ export class Subscription extends BaseModel {
   @Column({ unique: false, name: 'duration', default: 6 })
   duration: number;
 
-  @OneToOne(() => SubscriptionPlan)
+  @ManyToMany(() => SubscriptionPlan)
   @JoinColumn({ name: 'plan_id' })
   plan: SubscriptionPlan;
 }

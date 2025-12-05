@@ -7,6 +7,7 @@ import { SharedModule } from '@app/common';
 import { Subscription } from './models/subscription.entity';
 import { SubscriptionPaymentService } from './services/subscription_payment.service';
 import { SubscriptionPayment } from './models/subscription_payment.entity';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SubscriptionPayment } from './models/subscription_payment.entity';
       SubscriptionPayment,
     ]),
     SharedModule,
+    HttpModule,
   ],
   providers: [SubscriptionService, SubscriptionPaymentService],
   controllers: [SubscriptionController],

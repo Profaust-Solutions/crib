@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Header,
+  HttpCode,
   Logger,
   Param,
   Post,
@@ -22,21 +23,26 @@ import { map, Observable, switchMap } from 'rxjs';
 import { UpdateResult } from 'typeorm';
 import { AuthTokenGuard } from '@app/common/shared/guards/auth-token.guard';
 import { Subscription } from '../models/subscription.entity';
+import { SubscriptionPaymentService } from '../services/subscription_payment.service';
+import { SubscriptionPayment } from '../models/subscription_payment.entity';
 
 @Controller('subscriptions')
 export class SubscriptionController {
   private readonly logger = new Logger(SubscriptionController.name);
-  constructor(public subscriptionService: SubscriptionService) {}
+  constructor(
+    public subscriptionService: SubscriptionService,
+    public subscriptionPaymentService: SubscriptionPaymentService,
+  ) {}
 
   @UseGuards(AuthTokenGuard)
   @Post('plan')
   @Header('Cache-Control', 'none')
   createPlan(
     @Body() plan: SubscriptionPlan,
-    @Req() requset,
+    @Req() request,
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
-    const userId = requset.user['id'];
+    const userId = request.user['id'];
     plan.created_by = userId;
     const createdPlanResult$ = this.subscriptionService.createPlan(plan);
     return createdPlanResult$.pipe(
@@ -82,10 +88,10 @@ export class SubscriptionController {
   @Header('Cache-Control', 'none')
   findOnePlan(
     @Param('planId') planId: string,
-    @Req() requset,
+    @Req() request,
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
-    const userId = requset.user['id'];
+    const userId = request.user['id'];
     //console.log('plan: ' + JSON.stringify(plan));
     const findById$ = this.subscriptionService.findOnePlan(planId);
     return findById$.pipe(
@@ -169,13 +175,14 @@ export class SubscriptionController {
   @Header('Cache-Control', 'none')
   create(
     @Body() subscription: Subscription,
-    @Req() requset,
+    @Req() request,
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
-    const userId = requset.user['id'];
+    const userId = request.user['id'];
     subscription.created_by = userId;
     subscription.user_id = userId;
-    const createdSubscriptionResult$ = this.subscriptionService.subscribe(subscription);
+    const createdSubscriptionResult$ =
+      this.subscriptionService.subscribe(subscription);
     return createdSubscriptionResult$.pipe(
       map((createdSubscription: SubscriptionPlan) => {
         response.code = ResponseCodes.SUCCESS.code;
@@ -184,5 +191,46 @@ export class SubscriptionController {
         return response;
       }),
     );
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Post('payment/init')
+  @Header('Cache-Control', 'none')
+  makePayment(
+    @Body() payment: SubscriptionPayment,
+    @Req() request,
+  ): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    const userId = request.user['id'];
+    payment.created_by = userId;
+    payment.user_id = userId;
+    const createdSubscriptionPaymentResult$ =
+      this.subscriptionPaymentService.createPayment(payment);
+    return createdSubscriptionPaymentResult$.pipe(
+      map((createdSubscriptionPayment: SubscriptionPayment) => {
+        response.code = ResponseCodes.SUCCESS.code;
+        response.message = ResponseCodes.SUCCESS.message;
+        response.data = { ...createdSubscriptionPayment };
+        return response;
+      }),
+    );
+  }
+
+  @HttpCode(200)
+  @Post('payment-callback')
+  @Header('Cache-Control', 'none')
+  paymentCallback(@Body() payment: any): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    return this.subscriptionPaymentService
+      .updatePaymentFromCallback(payment)
+      .pipe(
+        map((result: UpdateResult) => {
+          if (result.affected > 0) {
+            response.code = ResponseCodes.SUCCESS.code;
+            response.message = ResponseCodes.SUCCESS.message;
+          }
+          return response;
+        }),
+      );
   }
 }

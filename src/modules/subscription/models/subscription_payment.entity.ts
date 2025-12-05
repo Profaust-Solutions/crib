@@ -10,6 +10,9 @@ export class SubscriptionPayment extends BaseModel {
   @Column({ unique: false, name: 'user_id' })
   user_id: String;
 
+  @Column({ unique: false, name: 'email' })
+  email: String;
+
   @Column({ unique: false, name: 'currency' })
   currency: String;
 
@@ -20,15 +23,18 @@ export class SubscriptionPayment extends BaseModel {
   payment_method: String;
 
   @Column({ name: 'payment_date', type: 'timestamp' })
-  payment_date: Date;
+  payment_date: Date = new Date();
 
-  @Column({ name: 'payment_reference', type: 'timestamp' })
+  @Column({ unique: false, default: '', name: 'access_code' })
+  access_code: String;
+
+  @Column({ name: 'payment_reference' })
   payment_reference: String;
 
-  @Column({ name: 'payment_status' })
+  @Column({ name: 'payment_status', default: 'initialised' })
   payment_status: String;
 
-  @Column("simple-array")
+  @Column('simple-array')
   public meta_data?: [];
 
   @ManyToOne(() => Subscription)
