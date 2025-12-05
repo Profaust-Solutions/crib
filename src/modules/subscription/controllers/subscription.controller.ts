@@ -19,7 +19,7 @@ import {
   ApiResponse,
   ResponseCodes,
 } from '@app/common/shared/models/api-response';
-import { map, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, of, switchMap } from 'rxjs';
 import { UpdateResult } from 'typeorm';
 import { AuthTokenGuard } from '@app/common/shared/guards/auth-token.guard';
 import { Subscription } from '../models/subscription.entity';
@@ -217,20 +217,13 @@ export class SubscriptionController {
   }
 
   @HttpCode(200)
-  @Post('payment-callback')
+  @Post('payment/callback')
   @Header('Cache-Control', 'none')
   paymentCallback(@Body() payment: any): Observable<ApiResponse> {
     let response = new ApiResponse();
-    return this.subscriptionPaymentService
-      .updatePaymentFromCallback(payment)
-      .pipe(
-        map((result: UpdateResult) => {
-          if (result.affected > 0) {
-            response.code = ResponseCodes.SUCCESS.code;
-            response.message = ResponseCodes.SUCCESS.message;
-          }
-          return response;
-        }),
-      );
+    this.subscriptionPaymentService.updatePaymentFromCallback(payment);
+    response.code = ResponseCodes.SUCCESS.code;
+    response.message = ResponseCodes.SUCCESS.message;
+    return of(response);
   }
 }

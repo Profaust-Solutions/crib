@@ -24,8 +24,33 @@ export class SubscriptionPaymentService {
   public updatePayment = (payment: SubscriptionPayment) =>
     from(this.subscriptionPaymentRepository.update(payment.id, payment));
 
-  public updatePaymentFromCallback = (payment: any) =>
-    from(this.subscriptionPaymentRepository.update(payment.id, payment));
+  public updatePaymentFromCallback(callbackP: any): void {
+    //let callbackP = JSON.parse(paymentR);
+
+    const event = callbackP['event'];
+    const data = callbackP['data'];
+
+    if (event == 'paymentrequest.success') {
+      const status = data['status'];
+      const reference = data['offline_reference'];
+      const paid = data['paid'];
+      const payment_date = data['paid_at'];
+
+      this.subscriptionPaymentRepository.update(reference, {
+        payment_status: 'paid',
+        payment_date: payment_date,
+      });
+    } else if (event == 'paymentrequest.pending') {
+      const status = data['status'];
+      const reference = data['offline_reference'];
+      const paid = data['paid'];
+      const payment_date = data['paid_at'];
+
+      this.subscriptionPaymentRepository.update(reference, {
+        payment_status: status,
+      });
+    }
+  }
 
   public createPayment(
     payment: SubscriptionPayment,
@@ -63,6 +88,7 @@ export class SubscriptionPaymentService {
       currency: createdPayment.currency,
       reference: createdPayment.id,
       channels: channels,
+      callback_url: this.configService.get('PAYSTACK_CALLBACK_URL'),
     };
 
     let requestConfig: AxiosRequestConfig = {
