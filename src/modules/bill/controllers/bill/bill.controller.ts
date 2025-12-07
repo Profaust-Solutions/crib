@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -35,12 +36,18 @@ export class BillController {
     public billAttachmentService: BillAttachmentService,
   ) {}
 
+  @UseGuards(AuthTokenGuard)
   @Post('create')
   //@AuditLog('Create awesomeBill')
   @Header('Cache-Control', 'none')
-  create(@Body() awesomeBill: AwesomeBill[]): Observable<ApiResponse> {
+  create(
+    @Body() awesomeBill: AwesomeBill[],
+    @Req() requset,
+  ): Observable<ApiResponse> {
     let response = new ApiResponse();
+    const userId = requset.user['id'];
     let bulkRequest = awesomeBill.map((bill: AwesomeBill) => {
+      bill.user_id = userId;
       return this.billService.create(bill);
     });
     const createdBillResult$ = forkJoin(bulkRequest);

@@ -80,7 +80,8 @@ export class UserController {
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
     const user = requset.user;
-    console.log('user: ' + JSON.stringify(user));
+    userId = user['id'];
+    //console.log('user: ' + JSON.stringify(user));
     const findById$ = this.userService.findOne(userId);
     const findByMobileNumber$ = this.userService.findByMobileNumber(userId);
     return iif(() => userId.length > 19, findById$, findByMobileNumber$).pipe(
@@ -104,14 +105,17 @@ export class UserController {
     );
   }
 
+  @UseGuards(AuthTokenGuard)
   @Put(':userId')
   //@AuditLog('Update User')
   @Header('Cache-Control', 'none')
   update(
     @Param('userId') userId: string,
     @Body() user: User,
+    @Req() requset,
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
+    userId = requset.user['id'];
     user.id = userId;
     return this.userService.update(user).pipe(
       switchMap((user: UpdateResult) => {
@@ -140,11 +144,16 @@ export class UserController {
     );
   }
 
+  @UseGuards(AuthTokenGuard)
   @Delete(':userId')
   //@AuditLog('Delete user')
   @Header('Cache-Control', 'none')
-  delete(@Param('userId') userId: string): Observable<ApiResponse> {
+  delete(
+    @Param('userId') userId: string,
+    @Req() requset,
+  ): Observable<ApiResponse> {
     let response = new ApiResponse();
+    userId = requset.user['id'];
     return this.userService.softDelete(userId).pipe(
       map((role) => {
         if (role.affected > 0) {
