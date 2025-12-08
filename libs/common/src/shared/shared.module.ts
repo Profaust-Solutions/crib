@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 import { BullModule } from '@nestjs/bullmq';
 import { QueueService } from './services/queue.service';
+import { RelativeTimePipe } from './pipes/relative-time.pipe';
 
 @Module({
   imports: [
@@ -56,7 +57,19 @@ import { QueueService } from './services/queue.service';
       },
     }),
   ],
-  providers: [AuthTokenGuard, JwtService, EmailService,QueueService],
-  exports: [AuthTokenGuard, JwtService, EmailService,QueueService],
+  providers: [
+    AuthTokenGuard,
+    JwtService,
+    EmailService,
+    QueueService,
+    RelativeTimePipe,
+  ],
+  exports: [
+    AuthTokenGuard,
+    JwtService,
+    EmailService,
+    QueueService,
+    RelativeTimePipe,
+  ],
 })
 export class SharedModule {}

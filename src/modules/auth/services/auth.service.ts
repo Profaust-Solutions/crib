@@ -243,7 +243,8 @@ export class AuthService {
       tap((saved) => {
         saved['fullname'] = 'Emmanuel Davlynx Mensah';
         // enqueue email sending (non-blocking)
-        this.queueService.enqueuePasswordResetEmail(saved);
+        //this.queueService.enqueuePasswordResetEmail(saved);
+        this.emailService.sendEmailForPasswordReset(saved);
       }),
       map((saved) => saved), // return immediately
     );

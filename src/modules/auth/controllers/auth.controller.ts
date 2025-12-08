@@ -135,7 +135,7 @@ export class AuthController {
 
     return passwordResetResult$.pipe(
       map((passwordResetResult: PasswordResetRequest) => {
-        console.log(passwordResetResult);
+        //console.log(passwordResetResult);
         if (passwordResetResult) {
           response.code = ResponseCodes.SUCCESS.code;
           response.message = ResponseCodes.SUCCESS.message;
