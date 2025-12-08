@@ -9,6 +9,8 @@ import {
   Header,
   Body,
   HttpCode,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 import { UserService } from 'src/modules/user/services/user.service';
@@ -50,6 +52,7 @@ export class AuthController {
         } else {
           response.code = ResponseCodes.AUTHENTICATION_FAILED.code;
           response.message = ResponseCodes.AUTHENTICATION_FAILED.message;
+          throw new UnauthorizedException(response);
         }
         return response;
       }),
@@ -146,6 +149,8 @@ export class AuthController {
           response.code = ResponseCodes.AUTHENTICATION_FAILED.code;
           response.message = ResponseCodes.AUTHENTICATION_FAILED.message;
           response.data = passwordResetResult;
+
+          throw new BadRequestException(response);
         }
         return response;
       }),
@@ -168,6 +173,8 @@ export class AuthController {
           response.code = ResponseCodes.FAILED.code;
           response.message = passwordResetResult;
           response.data = passwordResetResult;
+
+          throw new BadRequestException(response);
         }
         return response;
       }),

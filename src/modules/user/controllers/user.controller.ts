@@ -3,6 +3,7 @@ import {
   ResponseCodes,
 } from '@app/common/shared/models/api-response';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -133,6 +134,8 @@ export class UserController {
               } else {
                 response.code = ResponseCodes.NO_RECORD_FOUND.code;
                 response.message = ResponseCodes.NO_RECORD_FOUND.message;
+
+                throw new BadRequestException(response);
               }
               return response;
             }),
@@ -140,6 +143,8 @@ export class UserController {
         } else {
           response.code = ResponseCodes.FAILED.code;
           response.message = ResponseCodes.FAILED.message;
+
+          throw new BadRequestException(response);
         }
       }),
     );
