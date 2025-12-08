@@ -1,12 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { from, Observable, of, switchMap } from 'rxjs';
+import { from, map, Observable, of, switchMap, tap } from 'rxjs';
 import { User } from 'src/modules/user/models/user.entity';
 import { UserService } from 'src/modules/user/services/user.service';
 import { Repository } from 'typeorm';
 import { OtpAuthentication } from '../models/otp-authentication.entity';
 import { dateAdd } from '@app/common';
+import { PasswordResetRequest } from '../models/password-reset-request.entity';
+import { EmailService } from '@app/common/shared/services/email.service';
+import { QueueService } from '@app/common/shared/services/queue.service';
 
 const bcrypt = require('bcrypt');
 
@@ -26,7 +29,11 @@ export class AuthService {
     @InjectRepository(OtpAuthentication)
     public readonly otpAuthenticationRepository: Repository<OtpAuthentication>,
     @Inject(UserService) public readonly userService: UserService,
+    @Inject(EmailService) public readonly emailService: EmailService,
+    private readonly queueService: QueueService,
     public readonly jwtService: JwtService,
+    @InjectRepository(PasswordResetRequest)
+    public readonly passwordResetRequestRepository: Repository<PasswordResetRequest>,
   ) {}
 
   public loginWithUsernameAndPassword(
@@ -149,7 +156,7 @@ export class AuthService {
         console.log(otpResult);
         const hasOtpExpired = this.checkOtpExpiry(otpResult);
         return of(hasOtpExpired);
-        
+
         if (!otpResult) {
           return of(false);
         }
@@ -205,7 +212,7 @@ export class AuthService {
     //     return currentDate > otpExpiryDate;
     //   });
 
-    return of(true)
+    return of(true);
   }
 
   public updateOtp = (otp: OtpAuthentication) =>
@@ -219,5 +226,26 @@ export class AuthService {
     let genOtp = Math.floor(min + Math.random() * max).toString();
     //console.log(genOtp);
     return genOtp;
+  }
+
+  public createPasswordReset(data: PasswordResetRequest) {
+    const otp = this.generateOtp(6);
+
+    const expires_at = new Date();
+    expires_at.setMinutes(expires_at.getMinutes() + 30);
+
+    data.otp = otp;
+    data.expires_at = expires_at;
+
+    const createdEntity = this.passwordResetRequestRepository.create(data);
+
+    return from(this.passwordResetRequestRepository.save(createdEntity)).pipe(
+      tap((saved) => {
+        saved['fullname'] = 'Emmanuel Davlynx Mensah';
+        // enqueue email sending (non-blocking)
+        this.queueService.enqueuePasswordResetEmail(saved);
+      }),
+      map((saved) => saved), // return immediately
+    );
   }
 }

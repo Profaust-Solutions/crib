@@ -27,6 +27,8 @@ export class UserService {
     from(this.userRepository.findOneBy({ username }));
   public findByMobileNumber = (mobile_number: string) =>
     from(this.userRepository.findOneBy({ mobile_number }));
+  public findByEmail = (email: string) =>
+    from(this.userRepository.findOneBy({ email }));
   public delete = (userId: string) => from(this.userRepository.delete(userId));
   //public softDelete = (user: User) => from(this.userRepository.update(user.id, user));
 
@@ -44,5 +46,9 @@ export class UserService {
       return this.userRepository.findOneBy({ id });
     }
     return this.userRepository.findOneBy({ id: userId });
+  }
+
+  public updatePartial(user: Partial<User> & { id: string }) {
+    return from(this.userRepository.update(user.id, user));
   }
 }

@@ -2,12 +2,20 @@ import {
   ApiResponse,
   ResponseCodes,
 } from '@app/common/shared/models/api-response';
-import { Controller, Logger, Post, Header, Body, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Logger,
+  Post,
+  Header,
+  Body,
+  HttpCode,
+} from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 import { UserService } from 'src/modules/user/services/user.service';
 import { LoginDto } from '../models/login-dto';
 import { AuthService } from '../services/auth.service';
 import { OtpAuthentication } from '../models/otp-authentication.entity';
+import { PasswordResetRequest } from '../models/password-reset-request.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -95,32 +103,50 @@ export class AuthController {
 
   @Post('verifyotp')
   @HttpCode(200)
-  verifyOtp(@Body() data: any) : Observable<ApiResponse> {
+  verifyOtp(@Body() data: any): Observable<ApiResponse> {
     let response = new ApiResponse();
     const mobileNumber = data.mobile_number;
     const otp = data.otp;
-    const verifyOtpResult$ = this.authService.verifyOtp(
-      mobileNumber,
-      otp,
-    );
+    const verifyOtpResult$ = this.authService.verifyOtp(mobileNumber, otp);
 
     return verifyOtpResult$.pipe(
       map((verifyOtpResult: boolean) => {
-        console.log(verifyOtpResult)
+        console.log(verifyOtpResult);
         if (verifyOtpResult) {
           response.code = ResponseCodes.SUCCESS.code;
           response.message = ResponseCodes.SUCCESS.message;
-          response.data = 
-            verifyOtpResult;
+          response.data = verifyOtpResult;
         } else {
           response.code = ResponseCodes.AUTHENTICATION_FAILED.code;
           response.message = ResponseCodes.AUTHENTICATION_FAILED.message;
-          response.data = 
-            verifyOtpResult;
+          response.data = verifyOtpResult;
         }
         return response;
       }),
     );
+  }
 
+  @Post('reset-password-request')
+  passwordRestRequest(
+    @Body() data: PasswordResetRequest,
+  ): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    const passwordResetResult$ = this.authService.createPasswordReset(data);
+
+    return passwordResetResult$.pipe(
+      map((passwordResetResult: PasswordResetRequest) => {
+        console.log(passwordResetResult);
+        if (passwordResetResult) {
+          response.code = ResponseCodes.SUCCESS.code;
+          response.message = ResponseCodes.SUCCESS.message;
+          response.data = passwordResetResult;
+        } else {
+          response.code = ResponseCodes.AUTHENTICATION_FAILED.code;
+          response.message = ResponseCodes.AUTHENTICATION_FAILED.message;
+          response.data = passwordResetResult;
+        }
+        return response;
+      }),
+    );
   }
 }

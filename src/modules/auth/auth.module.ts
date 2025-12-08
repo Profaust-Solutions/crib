@@ -6,13 +6,14 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/services/user.service';
 import { JwtStrategy } from '@app/common/shared/strategies/jwt.strategy';
 import {ConfigService } from '@nestjs/config';
-import { ConfigModule } from '@app/common';
+import { ConfigModule, SharedModule } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OtpAuthentication } from './models/otp-authentication.entity';
+import { PasswordResetRequest } from './models/password-reset-request.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([OtpAuthentication]),
+    TypeOrmModule.forFeature([OtpAuthentication,PasswordResetRequest]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -24,6 +25,7 @@ import { OtpAuthentication } from './models/otp-authentication.entity';
       }),
     }),
     UserModule,
+    SharedModule
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

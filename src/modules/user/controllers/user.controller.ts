@@ -117,6 +117,7 @@ export class UserController {
     let response = new ApiResponse();
     userId = requset.user['id'];
     user.id = userId;
+    delete user.password;
     return this.userService.update(user).pipe(
       switchMap((user: UpdateResult) => {
         if (user.affected > 0) {

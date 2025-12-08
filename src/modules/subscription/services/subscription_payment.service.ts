@@ -4,10 +4,12 @@ import { Subscription } from '../models/subscription.entity';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { from, map, Observable, of, switchMap } from 'rxjs';
+import { forkJoin, from, map, Observable, of, switchMap } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { AxiosRequestConfig } from 'axios';
+import { User } from 'src/modules/user/models/user.entity';
+import { UserService } from 'src/modules/user/services/user.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class SubscriptionPaymentService {
@@ -17,6 +19,7 @@ export class SubscriptionPaymentService {
     public readonly subscriptionPaymentRepository: Repository<SubscriptionPayment>,
     @InjectRepository(Subscription)
     public readonly subscriptionRepository: Repository<Subscription>,
+    @Inject() private userService: UserService,
     @Inject() private configService: ConfigService,
     @Inject() private readonly httpService: HttpService,
   ) {}
@@ -36,10 +39,38 @@ export class SubscriptionPaymentService {
       const paid = data['paid'];
       const payment_date = data['paid_at'];
 
-      this.subscriptionPaymentRepository.update(reference, {
-        payment_status: 'paid',
-        payment_date: payment_date,
-      });
+      //find subscription and update status
+      const subscription$ = from(
+        this.subscriptionRepository.findOneBy({ id: reference }),
+      );
+      subscription$
+        .pipe(
+          switchMap((subscription: Subscription) => {
+            let roleToUpdate = subscription.update_role.toString();
+            const userId = subscription.user_id.toString();
+
+            const updatePayment$ = from(
+              this.subscriptionPaymentRepository.update(reference, {
+                payment_status: 'paid',
+                payment_date: payment_date,
+              }),
+            );
+            const updateSub$ = from(
+              this.subscriptionRepository.update(reference, {
+                status: 'active',
+              }),
+            );
+
+            const updateUserR$ = from(
+              this.userService.updatePartial({
+                id: userId,
+                role: roleToUpdate,
+              }),
+            );
+            return forkJoin([updatePayment$, updateSub$, updateUserR$]);
+          }),
+        )
+        .subscribe();
     } else if (event == 'paymentrequest.pending') {
       const status = data['status'];
       const reference = data['offline_reference'];

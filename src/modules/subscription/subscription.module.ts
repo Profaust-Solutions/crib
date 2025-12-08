@@ -8,6 +8,7 @@ import { Subscription } from './models/subscription.entity';
 import { SubscriptionPaymentService } from './services/subscription_payment.service';
 import { SubscriptionPayment } from './models/subscription_payment.entity';
 import { HttpModule } from '@nestjs/axios';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { HttpModule } from '@nestjs/axios';
     ]),
     SharedModule,
     HttpModule,
+    UserModule,
   ],
   providers: [SubscriptionService, SubscriptionPaymentService],
   controllers: [SubscriptionController],

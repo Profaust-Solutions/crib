@@ -29,6 +29,9 @@ export class Subscription extends BaseModel {
   @Column({ unique: false, name: 'duration', default: 6 })
   duration: number;
 
+  @Column({ unique: false, name: 'update_role', default: 'manager' })
+  update_role: String;
+
   @ManyToMany(() => SubscriptionPlan)
   @JoinColumn({ name: 'plan_id' })
   plan: SubscriptionPlan;
