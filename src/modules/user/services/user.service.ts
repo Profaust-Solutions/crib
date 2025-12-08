@@ -5,7 +5,7 @@ import { Observable, from } from 'rxjs';
 import { Repository } from 'typeorm';
 import { User } from '../models/user.entity';
 import { REQUEST } from '@nestjs/core';
-
+const bcrypt = require('bcrypt');
 @Injectable({ scope: Scope.REQUEST })
 export class UserService {
   constructor(
@@ -20,6 +20,13 @@ export class UserService {
   }
   public update = (user: User) =>
     from(this.userRepository.update(user.id, user));
+
+  public updatePassword(id: String, password: string) {
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(password, salt);
+    password = hash;
+    return from(this.userRepository.update(id.toString(), { password }));
+  }
   public findAll = (options: IPaginationOptions) =>
     from(paginate<User>(this.userRepository, options));
   public findOne = (id: string) => from(this.findUser(id));

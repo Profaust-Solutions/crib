@@ -16,6 +16,7 @@ import { LoginDto } from '../models/login-dto';
 import { AuthService } from '../services/auth.service';
 import { OtpAuthentication } from '../models/otp-authentication.entity';
 import { PasswordResetRequest } from '../models/password-reset-request.entity';
+import { ResetPasswordDto } from '../models/reset-password';
 
 @Controller('auth')
 export class AuthController {
@@ -26,6 +27,7 @@ export class AuthController {
   ) {}
   @Post('login')
   //@AuditLog('Login')
+  @HttpCode(200)
   @Header('Cache-Control', 'none')
   login(@Body() data: LoginDto): Observable<ApiResponse> {
     let response = new ApiResponse();
@@ -143,6 +145,28 @@ export class AuthController {
         } else {
           response.code = ResponseCodes.AUTHENTICATION_FAILED.code;
           response.message = ResponseCodes.AUTHENTICATION_FAILED.message;
+          response.data = passwordResetResult;
+        }
+        return response;
+      }),
+    );
+  }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  passwordRest(@Body() data: ResetPasswordDto): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    const passwordResetResult$ = this.authService.resetPassword(data);
+
+    return passwordResetResult$.pipe(
+      map((passwordResetResult: string) => {
+        if (passwordResetResult.includes('password reset successfully')) {
+          response.code = ResponseCodes.SUCCESS.code;
+          response.message = ResponseCodes.SUCCESS.message;
+          response.data = passwordResetResult;
+        } else {
+          response.code = ResponseCodes.FAILED.code;
+          response.message = passwordResetResult;
           response.data = passwordResetResult;
         }
         return response;

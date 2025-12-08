@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { from, map, Observable, of, switchMap, tap } from 'rxjs';
+import { catchError, from, map, Observable, of, switchMap, tap } from 'rxjs';
 import { User } from 'src/modules/user/models/user.entity';
 import { UserService } from 'src/modules/user/services/user.service';
 import { Repository } from 'typeorm';
@@ -10,6 +10,7 @@ import { dateAdd } from '@app/common';
 import { PasswordResetRequest } from '../models/password-reset-request.entity';
 import { EmailService } from '@app/common/shared/services/email.service';
 import { QueueService } from '@app/common/shared/services/queue.service';
+import { ResetPasswordDto } from '../models/reset-password';
 
 const bcrypt = require('bcrypt');
 
@@ -228,11 +229,13 @@ export class AuthService {
     return genOtp;
   }
 
-  public createPasswordReset(data: PasswordResetRequest) {
+  public createPasswordReset(
+    data: PasswordResetRequest,
+  ): Observable<PasswordResetRequest> {
     const otp = this.generateOtp(6);
 
     const expires_at = new Date();
-    expires_at.setMinutes(expires_at.getMinutes() + 30);
+    expires_at.setMinutes(expires_at.getMinutes() + 10);
 
     data.otp = otp;
     data.expires_at = expires_at;
@@ -240,13 +243,75 @@ export class AuthService {
     const createdEntity = this.passwordResetRequestRepository.create(data);
 
     return from(this.passwordResetRequestRepository.save(createdEntity)).pipe(
-      tap((saved) => {
-        saved['fullname'] = 'Emmanuel Davlynx Mensah';
-        // enqueue email sending (non-blocking)
-        //this.queueService.enqueuePasswordResetEmail(saved);
-        this.emailService.sendEmailForPasswordReset(saved);
+      switchMap((savedRequest) =>
+        this.userService.findByEmail(savedRequest.email).pipe(
+          tap((user) => {
+            // add user's fullname for the email
+            data['fullname'] = user.fullname;
+            // send email (non-blocking)
+            this.emailService.sendEmailForPasswordReset(data);
+          }),
+          map(() => {
+            delete savedRequest.otp;
+            return savedRequest;
+          }), // return the saved request
+        ),
+      ),
+    );
+  }
+
+  public resetPassword(data: ResetPasswordDto): Observable<string> {
+    return from(
+      this.passwordResetRequestRepository.findOne({
+        where: {
+          otp: data.otp,
+          email: data.email,
+        },
       }),
-      map((saved) => saved), // return immediately
+    ).pipe(
+      switchMap((passwordResetRequest) => {
+        if (!passwordResetRequest) {
+          return of('invalid otp');
+        }
+
+        // Optional: check if OTP is expired
+        if (passwordResetRequest.expires_at < new Date()) {
+          return of('otp expired');
+        }
+
+        // Optional: check if OTP has already been used
+        if (passwordResetRequest.used) {
+          return of('otp already used');
+        }
+
+        return from(this.userService.findByEmail(data.email)).pipe(
+          switchMap((user) => {
+            if (!user) {
+              return of('invalid email');
+            }
+
+            // update password
+            return from(
+              this.userService.updatePassword(user.id, data.new_password),
+            ).pipe(
+              // mark OTP as used
+              switchMap(() =>
+                from(
+                  this.passwordResetRequestRepository.update(
+                    passwordResetRequest.id,
+                    { used: true },
+                  ),
+                ),
+              ),
+              map(() => 'password reset successfully'),
+            );
+          }),
+        );
+      }),
+      catchError((err) => {
+        console.error('Error resetting password', err);
+        return of('internal server error');
+      }),
     );
   }
 }
