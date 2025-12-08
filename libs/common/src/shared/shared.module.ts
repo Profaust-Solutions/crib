@@ -21,7 +21,7 @@ import { RelativeTimePipe } from './pipes/relative-time.pipe';
           secure: true,
           auth: {
             // Account gmail address
-            user: configService.get('SMTP_FROM'),
+            user: configService.get('SMTP_USER'),
             pass: configService.get('SMTP_PASS'),
           },
           tls: {

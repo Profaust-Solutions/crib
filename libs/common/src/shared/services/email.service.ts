@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import { Observable, of } from 'rxjs';
 import { RelativeTimePipe } from '../pipes/relative-time.pipe';
+import { Resend } from 'resend';
 
 @Injectable()
 export class EmailService {
@@ -25,6 +26,23 @@ export class EmailService {
       if (!emailsList) {
         throw new Error(`No recipients email found`);
       }
+
+      // const resend = new Resend(this.configService.get('RESEND_API_KEY'));
+
+      // const response = await resend.emails.send({
+      //   from: 'CRIB <onboarding@resend.dev>',
+      //   to: emailsList,
+      //   subject: 'Reset Your Password Now',
+      //   template: {
+      //     id: 'password-reset-email-template',
+      //     variables: {
+      //       name: fullname,
+      //       otp: otp,
+      //       expires_at: relative,
+      //       resetLink: 'http://localhost:3000/auth/reset-password',
+      //     },
+      //   },
+      // });
 
       const sendMailParams: ISendMailOptions = {
         to: emailsList,
