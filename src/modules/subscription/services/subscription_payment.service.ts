@@ -84,6 +84,62 @@ export class SubscriptionPaymentService {
     }
   }
 
+  public updatePaymentFromWebhook(webhookP: any): void {
+    //let callbackP = JSON.parse(paymentR);
+    this.logger.log(webhookP);
+    const event = webhookP['event'];
+    const data = webhookP['data'];
+
+    if (event == 'charge.success') {
+      const status = data['status'];
+      const reference = data['offline_reference'];
+      const paid = data['paid'];
+      const payment_date = data['paid_at'];
+
+      //find subscription and update status
+      const subscription$ = from(
+        this.subscriptionRepository.findOneBy({ id: reference }),
+      );
+      subscription$
+        .pipe(
+          switchMap((subscription: Subscription) => {
+            let roleToUpdate = subscription.update_role.toString();
+            const userId = subscription.user_id.toString();
+
+            const updatePayment$ = from(
+              this.subscriptionPaymentRepository.update(reference, {
+                payment_status: 'paid',
+                payment_date: payment_date,
+              }),
+            );
+            const updateSub$ = from(
+              this.subscriptionRepository.update(reference, {
+                status: 'active',
+              }),
+            );
+
+            const updateUserR$ = from(
+              this.userService.updatePartial({
+                id: userId,
+                role: roleToUpdate,
+              }),
+            );
+            return forkJoin([updatePayment$, updateSub$, updateUserR$]);
+          }),
+        )
+        .subscribe();
+    } else if (event == 'charge.pending') {
+      const status = data['status'];
+      const reference = data['offline_reference'];
+      const paid = data['paid'];
+      const payment_date = data['paid_at'];
+
+      this.subscriptionPaymentRepository.update(reference, {
+        payment_status: status,
+      });
+    }
+  }
+
   public createPayment(
     payment: SubscriptionPayment,
   ): Observable<SubscriptionPayment> {
@@ -121,6 +177,7 @@ export class SubscriptionPaymentService {
       reference: createdPayment.id,
       channels: channels,
       callback_url: this.configService.get('PAYSTACK_CALLBACK_URL'),
+      webhook_url: this.configService.get('PAYSTACK_WEBHOOK_URL'),
     };
 
     let requestConfig: AxiosRequestConfig = {

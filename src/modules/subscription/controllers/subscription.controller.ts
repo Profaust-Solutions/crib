@@ -226,4 +226,15 @@ export class SubscriptionController {
     response.message = ResponseCodes.SUCCESS.message;
     return of(response);
   }
+
+  @HttpCode(200)
+  @Post('payment/webhook')
+  @Header('Cache-Control', 'none')
+  paymentWebhook(@Body() paymentWebhook: any): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    this.subscriptionPaymentService.updatePaymentFromWebhook(paymentWebhook);
+    response.code = ResponseCodes.SUCCESS.code;
+    response.message = ResponseCodes.SUCCESS.message;
+    return of(response);
+  }
 }
