@@ -286,29 +286,31 @@ export class PropertyController {
   //@AuditLog('Get Property')
   @Header('Cache-Control', 'none')
   findTenants(
-     @Param('apartmentId') apartmentId: string,
+    @Param('apartmentId') apartmentId: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
-    return this.tenantService.findByApartmentId(apartmentId,{ page, limit }).pipe(
-      map((tenantPagable) => {
-        const tenantItems = tenantPagable.items;
-        const tenantItemsMeta = tenantPagable.meta;
-        if (tenantItems.length > 0) {
-          response.code = ResponseCodes.SUCCESS.code;
-          response.message = ResponseCodes.SUCCESS.message;
-          response.data = tenantItems;
-          response.meta = tenantItemsMeta;
-        } else {
-          response.code = ResponseCodes.NO_RECORD_FOUND.code;
-          response.message = ResponseCodes.NO_RECORD_FOUND.message;
-        }
-        return response;
-      }),
-    );
+    return this.tenantService
+      .findByApartmentId(apartmentId, { page, limit })
+      .pipe(
+        map((tenantPagable) => {
+          const tenantItems = tenantPagable.items;
+          const tenantItemsMeta = tenantPagable.meta;
+          if (tenantItems.length > 0) {
+            response.code = ResponseCodes.SUCCESS.code;
+            response.message = ResponseCodes.SUCCESS.message;
+            response.data = tenantItems;
+            response.meta = tenantItemsMeta;
+          } else {
+            response.code = ResponseCodes.NO_RECORD_FOUND.code;
+            response.message = ResponseCodes.NO_RECORD_FOUND.message;
+          }
+          return response;
+        }),
+      );
   }
-  
+
   @Post('apartment/assign-tenant')
   //@AuditLog('apartment assign-tenant')
   @Header('Cache-Control', 'none')
@@ -366,6 +368,29 @@ export class PropertyController {
         return of(response);
       }),
     );
+  }
+
+  @Post('tenant/invite-status')
+  //@AuditLog('apartment assign-tenant')
+  @Header('Cache-Control', 'none')
+  updateTenantInvite(@Body() invite: Tenant): Observable<ApiResponse> {
+    let response = new ApiResponse();
+
+    return this.tenantService
+      .updateStatus(invite.id, invite.status)
+      .pipe(
+        map(() => {
+          response.code = ResponseCodes.SUCCESS.code;
+          response.message = ResponseCodes.SUCCESS.message;
+          return response;
+        }),
+        catchError((error) => {
+          console.error(error);
+          response.code = ResponseCodes.FAILED.code;
+          response.message = ResponseCodes.FAILED.message;
+          return of(response);
+        }),
+      );
   }
 
   //@UseGuards(AuthTokenGuard)

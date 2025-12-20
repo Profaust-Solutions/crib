@@ -1,4 +1,5 @@
 import { BaseModel } from '@app/common';
+import { Tenant } from 'src/modules/property/models/apartment_tenant.entity';
 import {
   AfterLoad,
   BeforeInsert,
@@ -6,6 +7,8 @@ import {
   Column,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
 } from 'typeorm';
 const bcrypt = require('bcrypt');
 
@@ -82,4 +85,8 @@ export class User extends BaseModel {
       this.profile_image = `https://dummyimage.com/300.png/09f/fff&text=${this.username.substring(0, 2)}`;
     }
   }
+
+    @OneToOne(() => Tenant, (tenant) => tenant.user)
+    //@JoinColumn({ name: 'id' })
+    tenant: Tenant;
 }

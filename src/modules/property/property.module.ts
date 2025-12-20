@@ -8,10 +8,15 @@ import { ApartmentService } from './services/apartment/apartment.service';
 import { TenantService } from './services/tenant/tenant.service';
 import { Tenant } from './models/apartment_tenant.entity';
 import { SharedModule } from '@app/common';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Property,Apartment,Tenant]),SharedModule],
+  imports: [
+    TypeOrmModule.forFeature([Property, Apartment, Tenant]),
+    SharedModule,
+    UserModule,
+  ],
   controllers: [PropertyController],
-  providers: [PropertyService, ApartmentService, TenantService]
+  providers: [PropertyService, ApartmentService, TenantService],
 })
 export class PropertyModule {}

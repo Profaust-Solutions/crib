@@ -72,7 +72,7 @@ export class UserController {
   }
 
   @UseGuards(AuthTokenGuard)
-  @Get(':userId')
+  @Get('/find')
   //@AuditLog('Get User')
   @Header('Cache-Control', 'none')
   findOne(

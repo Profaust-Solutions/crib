@@ -29,7 +29,21 @@ export class UserService {
   }
   public findAll = (options: IPaginationOptions) =>
     from(paginate<User>(this.userRepository, options));
-  public findOne = (id: string) => from(this.findUser(id));
+
+
+  //public findOne = (id: string) => from(this.findUser(id));
+
+public findOne(userId: string): Observable<User | null> {
+  return from(
+    this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['tenant'],
+    }),
+  );
+}
+
+
+
   public findByUsername = (username: string) =>
     from(this.userRepository.findOneBy({ username }));
   public findByMobileNumber = (mobile_number: string) =>
