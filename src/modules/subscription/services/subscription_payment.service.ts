@@ -34,7 +34,7 @@ export class SubscriptionPaymentService {
     const event = callbackP['event'];
     const data = callbackP['data'];
 
-    if (event == 'paymentrequest.success') {
+    if (event == 'charge.success') {
       const status = data['status'];
       const reference = data['offline_reference'];
       const paid = data['paid'];
@@ -72,7 +72,7 @@ export class SubscriptionPaymentService {
           }),
         )
         .subscribe();
-    } else if (event == 'paymentrequest.pending') {
+    } else if (event == 'charge.pending') {
       const status = data['status'];
       const reference = data['offline_reference'];
       const paid = data['paid'];
