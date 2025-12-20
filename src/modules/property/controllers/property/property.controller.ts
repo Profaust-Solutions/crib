@@ -1,9 +1,11 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   Header,
+  HttpCode,
   Logger,
   Param,
   Post,
@@ -235,6 +237,7 @@ export class PropertyController {
     );
   }
 
+  @HttpCode(200)
   @Get(':propertyId/apartments')
   //@AuditLog('Get property apartments')
   @Header('Cache-Control', 'none')
@@ -281,6 +284,7 @@ export class PropertyController {
     );
   }
 
+  @HttpCode(200)
   //@UseGuards(AuthTokenGuard)
   @Get('apartment/:apartmentId/tenants')
   //@AuditLog('Get Property')
@@ -369,30 +373,29 @@ export class PropertyController {
       }),
     );
   }
-
+  @HttpCode(200)
   @Post('tenant/invite-status')
   //@AuditLog('apartment assign-tenant')
   @Header('Cache-Control', 'none')
   updateTenantInvite(@Body() invite: Tenant): Observable<ApiResponse> {
     let response = new ApiResponse();
 
-    return this.tenantService
-      .updateStatus(invite.id, invite.status)
-      .pipe(
-        map(() => {
-          response.code = ResponseCodes.SUCCESS.code;
-          response.message = ResponseCodes.SUCCESS.message;
-          return response;
-        }),
-        catchError((error) => {
-          console.error(error);
-          response.code = ResponseCodes.FAILED.code;
-          response.message = ResponseCodes.FAILED.message;
-          return of(response);
-        }),
-      );
+    return this.tenantService.updateStatus(invite.id, invite.status).pipe(
+      map(() => {
+        response.code = ResponseCodes.SUCCESS.code;
+        response.message = ResponseCodes.SUCCESS.message;
+        return response;
+      }),
+      catchError((error) => {
+        console.error(error);
+        response.code = ResponseCodes.FAILED.code;
+        response.message = ResponseCodes.FAILED.message;
+        throw new BadRequestException(response);
+        //return of(response);
+      }),
+    );
   }
-
+  @HttpCode(200)
   //@UseGuards(AuthTokenGuard)
   @Delete('apartment/tenant/:tenantId')
   //@AuditLog('Delete tenant')
