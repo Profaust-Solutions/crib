@@ -129,6 +129,8 @@ export class SubscriptionPaymentService {
       },
     };
 
+    this.logger.log(paymentInitR);
+
     return this.httpService.post(
       `${this.configService.get('PAYSTACK_INITIALISE_TRANSACTION_URL')}`,
       paymentInitR,
