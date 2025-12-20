@@ -111,7 +111,7 @@ export class SubscriptionPaymentService {
   public initialTransactionApiCall(
     createdPayment: SubscriptionPayment,
   ): Observable<any> {
-    let channels = ['card', 'mobile_money', 'apple_pay'];
+    let channels = ['mobile_money','card', 'apple_pay'];
 
     let paymentInitR = {
       email: createdPayment.email,
