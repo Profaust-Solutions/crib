@@ -219,9 +219,9 @@ export class SubscriptionController {
   @HttpCode(200)
   @Post('payment/callback')
   @Header('Cache-Control', 'none')
-  paymentCallback(@Body() payment: any): Observable<ApiResponse> {
+  paymentCallback(@Body() paymentCallback: any): Observable<ApiResponse> {
     let response = new ApiResponse();
-    this.subscriptionPaymentService.updatePaymentFromCallback(payment);
+    this.subscriptionPaymentService.updatePaymentFromCallback(paymentCallback);
     response.code = ResponseCodes.SUCCESS.code;
     response.message = ResponseCodes.SUCCESS.message;
     return of(response);

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { SubscriptionPayment } from '../models/subscription_payment.entity';
 import { Subscription } from '../models/subscription.entity';
 import { REQUEST } from '@nestjs/core';
@@ -13,6 +13,7 @@ import { UserService } from 'src/modules/user/services/user.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class SubscriptionPaymentService {
+  private readonly logger = new Logger(SubscriptionPaymentService.name);
   constructor(
     @Inject(REQUEST) private readonly request: Request,
     @InjectRepository(SubscriptionPayment)
@@ -29,7 +30,7 @@ export class SubscriptionPaymentService {
 
   public updatePaymentFromCallback(callbackP: any): void {
     //let callbackP = JSON.parse(paymentR);
-
+    this.logger.log(callbackP);
     const event = callbackP['event'];
     const data = callbackP['data'];
 
