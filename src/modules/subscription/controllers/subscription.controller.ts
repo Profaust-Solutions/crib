@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   Header,
   HttpCode,
+  Inject,
   Logger,
   Param,
   Post,
@@ -25,6 +27,9 @@ import { AuthTokenGuard } from '@app/common/shared/guards/auth-token.guard';
 import { Subscription } from '../models/subscription.entity';
 import { SubscriptionPaymentService } from '../services/subscription_payment.service';
 import { SubscriptionPayment } from '../models/subscription_payment.entity';
+const crypto = require('crypto');
+import { createCipheriv, randomBytes, scrypt } from 'node:crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('subscriptions')
 export class SubscriptionController {
@@ -32,6 +37,7 @@ export class SubscriptionController {
   constructor(
     public subscriptionService: SubscriptionService,
     public subscriptionPaymentService: SubscriptionPaymentService,
+    @Inject() private configService: ConfigService,
   ) {}
 
   @UseGuards(AuthTokenGuard)
@@ -80,6 +86,36 @@ export class SubscriptionController {
         return response;
       }),
     );
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Get('')
+  @Header('Cache-Control', 'none')
+  findUserSubscriptions(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Req() request,
+  ): Observable<ApiResponse> {
+    let response = new ApiResponse();
+    const userId = request.user['id'];
+    return this.subscriptionService
+      .findUserSubscriptions(userId, { page, limit })
+      .pipe(
+        map((plansPagable) => {
+          const planItems = plansPagable.items;
+          const planItemsMeta = plansPagable.meta;
+          if (planItems.length > 0) {
+            response.code = ResponseCodes.SUCCESS.code;
+            response.message = ResponseCodes.SUCCESS.message;
+            response.data = planItems;
+            response.meta = planItemsMeta;
+          } else {
+            response.code = ResponseCodes.NO_RECORD_FOUND.code;
+            response.message = ResponseCodes.NO_RECORD_FOUND.message;
+          }
+          return response;
+        }),
+      );
   }
 
   @UseGuards(AuthTokenGuard)
@@ -184,7 +220,7 @@ export class SubscriptionController {
     const createdSubscriptionResult$ =
       this.subscriptionService.subscribe(subscription);
     return createdSubscriptionResult$.pipe(
-      map((createdSubscription: SubscriptionPlan) => {
+      map((createdSubscription: Subscription) => {
         response.code = ResponseCodes.SUCCESS.code;
         response.message = ResponseCodes.SUCCESS.message;
         response.data = { ...createdSubscription };
@@ -230,11 +266,29 @@ export class SubscriptionController {
   @HttpCode(200)
   @Post('payment/webhook')
   @Header('Cache-Control', 'none')
-  paymentWebhook(@Body() paymentWebhook: any): Observable<ApiResponse> {
+  paymentWebhook(
+    @Body() paymentWebhook: any,
+    @Req() request,
+  ): Observable<ApiResponse> {
     let response = new ApiResponse();
-    this.subscriptionPaymentService.updatePaymentFromWebhook(paymentWebhook);
-    response.code = ResponseCodes.SUCCESS.code;
-    response.message = ResponseCodes.SUCCESS.message;
-    return of(response);
+    const secret = this.configService.get('PAYSTACK_SECRET_KEY');
+    //const paystackSignature = paystackResponse.headers['x-paystack-signature'];
+    const hash = crypto
+      .createHmac('sha512', secret)
+      .update(JSON.stringify(request.body))
+      .digest('hex');
+    if (hash == request.headers['x-paystack-signature']) {
+      // Retrieve the request's body
+      this.subscriptionPaymentService.updatePaymentFromWebhook(paymentWebhook);
+      response.code = ResponseCodes.SUCCESS.code;
+      response.message = ResponseCodes.SUCCESS.message;
+      this.logger.log(response);
+      return of(response);
+    } else {
+      response.code = ResponseCodes.FAILED.code;
+      response.message = 'Invalid signature';
+      this.logger.log(response);
+      throw new BadRequestException(response);
+    }
   }
 }

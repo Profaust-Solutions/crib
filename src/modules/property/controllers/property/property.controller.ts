@@ -238,15 +238,15 @@ export class PropertyController {
   }
 
   @HttpCode(200)
-  @Get(':propertyId/apartments')
+  @Get(':subscriptionId/apartments')
   //@AuditLog('Get property apartments')
   @Header('Cache-Control', 'none')
   findApartments(
-    @Param('propertyId') propertyId: string,
+    @Param('subscriptionId') subscriptionId: string,
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
 
-    return this.apartmentService.findByPropertyId(propertyId).pipe(
+    return this.apartmentService.findBysubscriptionId(subscriptionId).pipe(
       map((apartments) => {
         if (apartments.length > 0) {
           response.code = ResponseCodes.SUCCESS.code;

@@ -7,8 +7,7 @@ import { Repository } from 'typeorm';
 import { forkJoin, from, map, Observable, of, switchMap } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { AxiosRequestConfig } from 'axios';
-import { User } from 'src/modules/user/models/user.entity';
+import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { UserService } from 'src/modules/user/services/user.service';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -150,7 +149,7 @@ export class SubscriptionPaymentService {
         this.initialTransactionApiCall(savedPayment).pipe(
           map((paystackResponse) => {
             const data = paystackResponse.data?.data;
-
+            
             // update saved payment with paystack details
             savedPayment.access_code = data.access_code;
             savedPayment.payment_reference = data.reference;
@@ -167,7 +166,7 @@ export class SubscriptionPaymentService {
 
   public initialTransactionApiCall(
     createdPayment: SubscriptionPayment,
-  ): Observable<any> {
+  ): Observable<AxiosResponse> {
     let channels = ['mobile_money','card', 'apple_pay'];
 
     let paymentInitR = {

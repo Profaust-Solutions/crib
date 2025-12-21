@@ -36,6 +36,16 @@ export class SubscriptionService {
       paginate<SubscriptionPlan>(this.subscriptionPlanRepository, options, {}),
     );
 
+    
+  public findUserSubscriptions(userId: string,options: IPaginationOptions){
+    return from(
+      paginate<Subscription>(this.subscriptionRepository, options, {
+        user_id: userId,
+        relations: ['plan'],
+      }),
+    );
+  }
+
   public subscribe(plan: Subscription): Observable<Subscription> {
     const createdPlan = this.subscriptionRepository.create(plan);
     return from(this.subscriptionRepository.save(createdPlan));

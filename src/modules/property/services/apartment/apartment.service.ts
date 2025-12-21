@@ -42,8 +42,11 @@ export class ApartmentService {
   public findAll = (options: IPaginationOptions) =>
     from(paginate<Apartment>(this.ApartmentRepository, options, {}));
 
-  public findByPropertyId = (propertyId: string) =>
-    from(this.ApartmentRepository.findBy({ property_id: propertyId }));
+  // public findByPropertyId = (propertyId: string) =>
+  //   from(this.ApartmentRepository.findBy({ property_id: propertyId }));
+
+   public findBysubscriptionId = (subscriptionId: string) =>
+    from(this.ApartmentRepository.findBy({ subscription_id: subscriptionId }));
 
   public findByTenantId = (tenantId: string) =>
     from(this.ApartmentRepository.findBy({ tenant: tenantId }));

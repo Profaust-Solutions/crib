@@ -1,5 +1,6 @@
 import { BaseModel } from '@app/common';
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
+import { Subscription } from './subscription.entity';
 
 @Entity('crib_subscription_plans')
 export class SubscriptionPlan extends BaseModel {
@@ -8,6 +9,9 @@ export class SubscriptionPlan extends BaseModel {
 
   @Column({ unique: false, type: 'longtext', name: 'description' })
   public description?: string;
+
+  @Column({ type: 'int', name: 'number_of_apartments', default: 0 })
+  public number_of_apartments?: number;
 
   @Column('simple-array')
   public plan_features?: String[];
@@ -29,4 +33,10 @@ export class SubscriptionPlan extends BaseModel {
 
   @Column('simple-array')
   public allowed_currencies?: String[];
+
+  @OneToMany(() => Subscription, (subscription) => subscription.plan,{
+    eager: false, // Don't automatically load teams with every user query
+    cascade: false, // Prevent cascading operations to teams
+  })
+  subscriptions: Subscription[];
 }

@@ -13,8 +13,8 @@ export class Apartment extends BaseModel {
   @Column({ unique: false, name: 'user_id' })
   public user_id?: string;
 
-  @Column({ unique: false, name: 'property_id' })
-  public property_id?: string;
+  @Column({ unique: false, name: 'subscription_id' })
+  public subscription_id?: string;
 
   @Column({ unique: false, name: 'tenant' })
   public tenant?: string;
