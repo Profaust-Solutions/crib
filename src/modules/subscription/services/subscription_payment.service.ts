@@ -91,42 +91,55 @@ export class SubscriptionPaymentService {
 
     if (event == 'charge.success') {
       const status = data['status'];
-      const reference = data['reference'];
+      let reference = data['offline_reference'];
       const paid = data['paid'];
       const payment_date = data['paid_at'];
+      const channel = data['channel'];
 
-      //find subscription and update status
-      const subscription$ = from(
-        this.subscriptionRepository.findOneBy({ id: reference }),
+      if (channel == 'mobile_money') {
+        reference = data['reference'];
+      }
+
+      const payment$ = from(
+        this.subscriptionPaymentRepository.findOneBy({ id: reference }),
       );
-      subscription$
-        .pipe(
-          switchMap((subscription: Subscription) => {
-            let roleToUpdate = subscription.update_role.toString();
-            const userId = subscription.user_id.toString();
 
-            const updatePayment$ = from(
-              this.subscriptionPaymentRepository.update(reference, {
-                payment_status: 'paid',
-                payment_date: payment_date,
-              }),
-            );
-            const updateSub$ = from(
-              this.subscriptionRepository.update(reference, {
-                status: 'active',
-              }),
-            );
+      payment$.pipe(
+        switchMap((payment: SubscriptionPayment) => {
+          let subscriptionId = payment.subscription_id.toString();
+          //find subscription and update status
+          const subscription$ = from(
+            this.subscriptionRepository.findOneBy({ id: subscriptionId }),
+          );
 
-            const updateUserR$ = from(
-              this.userService.updatePartial({
-                id: userId,
-                role: roleToUpdate,
-              }),
-            );
-            return forkJoin([updatePayment$, updateSub$, updateUserR$]);
-          }),
-        )
-        .subscribe();
+          return subscription$.pipe(
+            switchMap((subscription: Subscription) => {
+              let roleToUpdate = subscription.update_role.toString();
+              const userId = subscription.user_id.toString();
+
+              const updatePayment$ = from(
+                this.subscriptionPaymentRepository.update(reference, {
+                  payment_status: 'paid',
+                  payment_date: payment_date,
+                }),
+              );
+              const updateSub$ = from(
+                this.subscriptionRepository.update(reference, {
+                  status: 'active',
+                }),
+              );
+
+              const updateUserR$ = from(
+                this.userService.updatePartial({
+                  id: userId,
+                  role: roleToUpdate,
+                }),
+              );
+              return forkJoin([updatePayment$, updateSub$, updateUserR$]);
+            }),
+          );
+        }),
+      ).subscribe();
     } else if (event == 'charge.pending') {
       const status = data['status'];
       const reference = data['offline_reference'];
@@ -149,7 +162,7 @@ export class SubscriptionPaymentService {
         this.initialTransactionApiCall(savedPayment).pipe(
           map((paystackResponse) => {
             const data = paystackResponse.data?.data;
-            
+
             // update saved payment with paystack details
             savedPayment.access_code = data.access_code;
             savedPayment.payment_reference = data.reference;
@@ -167,7 +180,7 @@ export class SubscriptionPaymentService {
   public initialTransactionApiCall(
     createdPayment: SubscriptionPayment,
   ): Observable<AxiosResponse> {
-    let channels = ['mobile_money','card', 'apple_pay'];
+    let channels = ['mobile_money', 'card', 'apple_pay'];
 
     let paymentInitR = {
       email: createdPayment.email,

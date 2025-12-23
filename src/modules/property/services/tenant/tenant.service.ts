@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Tenant } from '../../models/apartment_tenant.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { from, iif, map, Observable } from 'rxjs';
+import { from, iif, map, Observable, of, switchMap } from 'rxjs';
 import { IPaginationOptions, paginate } from 'nestjs-typeorm-paginate';
 import { UserService } from 'src/modules/user/services/user.service';
 import { ApartmentService } from '../apartment/apartment.service';
@@ -25,7 +25,7 @@ export class TenantService {
     return from(this.TenantRepository.save(createdTenant));
   }
 
-  public assignTenantToAppartment(tenant: Tenant) {
+  public assignTenantToAppartment(tenant: Tenant): Observable<Tenant> {
     //find user by mobile number
     //if user does not exist send sms to mobile number, inviting user to register
     //if user exists, assign tenant to user
@@ -33,10 +33,12 @@ export class TenantService {
       tenant.mobile_number,
     );
 
-    userByMobileMumber.pipe(
-      map((user) => {
+    return userByMobileMumber.pipe(
+      switchMap((user) => {
+        iif(() => user.id !== null, this.create(tenant), of(null)).pipe();
         if (user.hasId) {
           tenant.tenant_id = user.id;
+          return this.create(tenant);
         } else {
           //send sms to mobile number, inviting user to register
           const apartment$ = this.ApartmentRepository.findOne({
@@ -45,7 +47,6 @@ export class TenantService {
             },
             relations: ['subscription'],
           });
-          
         }
       }),
     );

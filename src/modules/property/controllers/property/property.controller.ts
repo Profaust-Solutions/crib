@@ -320,7 +320,7 @@ export class PropertyController {
   @Header('Cache-Control', 'none')
   assignTenant(@Body() tenant: Tenant): Observable<ApiResponse> {
     let response = new ApiResponse();
-    const createdTenantResult$ = this.tenantService.create(tenant);
+    const createdTenantResult$ = this.tenantService.assignTenantToAppartment(tenant);
 
     return createdTenantResult$.pipe(
       map((createdTenant: Tenant) => {
