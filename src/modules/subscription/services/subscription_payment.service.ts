@@ -114,7 +114,8 @@ export class SubscriptionPaymentService {
 
           return subscription$.pipe(
             switchMap((subscription: Subscription) => {
-              let roleToUpdate = subscription.update_role.toString();
+              const roleToUpdate = subscription.update_role.toString();
+              const subId = subscription.id;
               const userId = subscription.user_id.toString();
 
               const updatePayment$ = from(
@@ -124,7 +125,7 @@ export class SubscriptionPaymentService {
                 }),
               );
               const updateSub$ = from(
-                this.subscriptionRepository.update(reference, {
+                this.subscriptionRepository.update(subId, {
                   status: 'active',
                 }),
               );

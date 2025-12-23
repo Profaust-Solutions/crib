@@ -14,7 +14,7 @@ import { join } from 'path';
         logging: true,
         synchronize: true,
         migrationsRun: false,
-        migrations: [__dirname + '/../migrations/**/*{.ts,.js}'],
+        //migrations: [__dirname + '/../migrations/**/*{.ts,.js}'],
         schema: configService.get<string>('DB_SCHEMA'),
         //subscribers: [AuditLogSubscriber],
         entities: [join(__dirname, '**', '*.entity.{ts,js}')], // this will automatically load all entity file in the src folder
