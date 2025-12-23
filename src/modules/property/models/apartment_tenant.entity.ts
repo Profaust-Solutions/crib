@@ -8,6 +8,7 @@ import {
   JoinColumn,
   OneToOne,
 } from 'typeorm';
+import { Apartment } from './apartment.entity';
 
 @Entity('crib_apartment_tenants')
 export class Tenant extends BaseModel {
@@ -20,7 +21,7 @@ export class Tenant extends BaseModel {
   @Column({ unique: false, name: 'apartment_id' })
   public apartment_id?: string;
 
-  @Column({ unique: false, name: 'status', default: 'pending_invite' })//invite_accepted//invite_declined
+  @Column({ unique: false, name: 'status', default: 'pending_invite' }) //invite_accepted//invite_declined
   public status?: string;
 
   public rent_start_date?: Date;
@@ -29,4 +30,8 @@ export class Tenant extends BaseModel {
   @OneToOne(() => User)
   @JoinColumn({ name: 'tenant_id' })
   user: User;
+
+  @OneToOne(() => Apartment)
+  @JoinColumn({ name: 'apartment_id' })
+  apartment: Apartment;
 }

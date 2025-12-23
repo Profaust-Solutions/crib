@@ -37,7 +37,7 @@ public findOne(userId: string): Observable<User | null> {
   return from(
     this.userRepository.findOne({
       where: { id: userId },
-      relations: ['tenant'],
+      relations: ['tenant', 'tenant.apartment'],
     }),
   );
 }
