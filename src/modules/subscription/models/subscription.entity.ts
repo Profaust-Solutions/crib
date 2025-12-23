@@ -9,6 +9,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { SubscriptionPlan } from './subscription_plan.entity';
+import { Apartment } from 'src/modules/property/models/apartment.entity';
 
 @Entity('crib_subscriptions')
 export class Subscription extends BaseModel {
@@ -43,10 +44,17 @@ export class Subscription extends BaseModel {
   @Column({ unique: false, name: 'update_role', default: 'manager' })
   update_role: String;
 
-  @ManyToOne(() => SubscriptionPlan, (plan) => plan.subscriptions,{
-    eager: false, // Don't automatically load teams with every user query
-    cascade: false, // Prevent cascading operations to teams
+  @ManyToOne(() => SubscriptionPlan, (plan) => plan.subscriptions, {
+    eager: false, // Don't automatically load plans with every user query
+    cascade: false, // Prevent cascading operations to plans
   })
   @JoinColumn({ name: 'plan_id' })
   plan: SubscriptionPlan;
+
+  @OneToMany(() => Apartment, (apartment) => apartment.subscription, {
+    eager: false,
+    cascade: false,
+  })
+  //@JoinColumn({ name: 'id' })
+  apartments: Apartment[];
 }

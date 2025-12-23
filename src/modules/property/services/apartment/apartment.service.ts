@@ -45,7 +45,7 @@ export class ApartmentService {
   // public findByPropertyId = (propertyId: string) =>
   //   from(this.ApartmentRepository.findBy({ property_id: propertyId }));
 
-   public findBysubscriptionId = (subscriptionId: string) =>
+   public findBySubscriptionId = (subscriptionId: string) =>
     from(this.ApartmentRepository.findBy({ subscription_id: subscriptionId }));
 
   public findByTenantId = (tenantId: string) =>

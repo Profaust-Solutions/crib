@@ -1,10 +1,12 @@
 import { BaseModel } from '@app/common/shared/models/base-model';
+import { Subscription } from 'src/modules/subscription/models/subscription.entity';
 import {
   BeforeInsert,
   Column,
   DeleteDateColumn,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToMany,
 } from 'typeorm';
 
@@ -28,16 +30,26 @@ export class Apartment extends BaseModel {
   @Column({ unique: false, name: 'number_of_rooms' })
   public number_of_rooms?: number;
 
-  @Column("simple-json")
-  public location: { country: string; city: string; address: string; nearest_landmark: string; };
+  @Column('simple-json')
+  public location: {
+    country: string;
+    city: string;
+    address: string;
+    nearest_landmark: string;
+  };
 
   @Column({ unique: false, name: 'type' })
   public type?: string;
 
-  @Column("simple-array")
+  @Column('simple-array')
   public images?: [];
 
-  @Column("simple-array")
+  @Column('simple-array')
   public appartment_rules?: [];
 
+  @ManyToOne(() => Subscription, (subscription) => subscription.apartments,{
+    eager: false,
+    cascade: false,
+  })
+  subscription: Subscription;
 }

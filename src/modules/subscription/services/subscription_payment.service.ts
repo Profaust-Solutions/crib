@@ -91,7 +91,7 @@ export class SubscriptionPaymentService {
 
     if (event == 'charge.success') {
       const status = data['status'];
-      const reference = data['offline_reference'];
+      const reference = data['reference'];
       const paid = data['paid'];
       const payment_date = data['paid_at'];
 

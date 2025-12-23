@@ -5,13 +5,19 @@ import { Repository } from 'typeorm';
 import { from, iif, map, Observable } from 'rxjs';
 import { IPaginationOptions, paginate } from 'nestjs-typeorm-paginate';
 import { UserService } from 'src/modules/user/services/user.service';
+import { ApartmentService } from '../apartment/apartment.service';
+import { Apartment } from '../../models/apartment.entity';
 
 @Injectable()
 export class TenantService {
   constructor(
     @InjectRepository(Tenant)
     public readonly TenantRepository: Repository<Tenant>,
+
+    @InjectRepository(Apartment)
+    public readonly ApartmentRepository: Repository<Apartment>,
     @Inject() private userService: UserService,
+    @Inject() private apartmentService: ApartmentService,
   ) {}
 
   public create(tenant: Tenant): Observable<Tenant> {
@@ -33,6 +39,13 @@ export class TenantService {
           tenant.tenant_id = user.id;
         } else {
           //send sms to mobile number, inviting user to register
+          const apartment$ = this.ApartmentRepository.findOne({
+            where: {
+              id: tenant.apartment_id,
+            },
+            relations: ['subscription'],
+          });
+          
         }
       }),
     );

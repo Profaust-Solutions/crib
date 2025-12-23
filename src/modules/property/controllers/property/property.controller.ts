@@ -246,7 +246,7 @@ export class PropertyController {
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
 
-    return this.apartmentService.findBysubscriptionId(subscriptionId).pipe(
+    return this.apartmentService.findBySubscriptionId(subscriptionId).pipe(
       map((apartments) => {
         if (apartments.length > 0) {
           response.code = ResponseCodes.SUCCESS.code;
