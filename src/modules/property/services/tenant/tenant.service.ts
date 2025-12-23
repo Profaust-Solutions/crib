@@ -35,7 +35,7 @@ export class TenantService {
 
     return userByMobileMumber.pipe(
       switchMap((user) => {
-        iif(() => user.id !== null, this.create(tenant), of(null)).pipe();
+        //iif(() => user.id !== null, this.create(tenant), of(null)).pipe();
         if (user.hasId) {
           tenant.tenant_id = user.id;
           return this.create(tenant);
