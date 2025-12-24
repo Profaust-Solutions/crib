@@ -5,6 +5,7 @@ import {
   catchError,
   forkJoin,
   from,
+  iif,
   map,
   Observable,
   of,
@@ -21,6 +22,7 @@ import { EmailService } from '@app/common/shared/services/email.service';
 import { QueueService } from '@app/common/shared/services/queue.service';
 import { ResetPasswordDto } from '../models/reset-password';
 import { SmsService } from '@app/common/shared/services/sms.service';
+import { ConfigService } from '@nestjs/config';
 
 const bcrypt = require('bcrypt');
 
@@ -42,6 +44,7 @@ export class AuthService {
     @Inject(UserService) public readonly userService: UserService,
     @Inject(EmailService) public readonly emailService: EmailService,
     @Inject(SmsService) public readonly smsService: SmsService,
+    @Inject() private configService: ConfigService,
     private readonly queueService: QueueService,
     public readonly jwtService: JwtService,
     @InjectRepository(PasswordResetRequest)
@@ -163,10 +166,13 @@ export class AuthService {
     const createOtpResult = from(
       this.otpAuthenticationRepository.save(createdOtp),
     );
-    const smsResult = this.smsService.sendOtpMessage(
-      otp.mobile_number,
-      tempOtp,
+    const env = this.configService.get('ENV');
+    const smsResult = iif(
+      () => env !== 'dev',
+      this.smsService.sendOtpMessage(otp.mobile_number, tempOtp),
+      of('do not send sms in dev mode'),
     );
+    this.smsService.sendOtpMessage(otp.mobile_number, tempOtp);
 
     return createOtpResult.pipe(
       tap(() => {
@@ -257,7 +263,11 @@ export class AuthService {
     //console.log(zeros);
     let min = Number(1 + zeros);
     let max = Number(9 + zeros);
-    let genOtp = Math.floor(min + Math.random() * max).toString();
+    const env = this.configService.get('ENV');
+    let genOtp =
+      env === 'dev'
+        ? '123456'
+        : Math.floor(min + Math.random() * max).toString();
     //console.log(genOtp);
     return genOtp;
   }
