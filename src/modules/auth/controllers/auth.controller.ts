@@ -115,9 +115,9 @@ export class AuthController {
     const verifyOtpResult$ = this.authService.verifyOtp(mobileNumber, otp);
 
     return verifyOtpResult$.pipe(
-      map((verifyOtpResult: boolean) => {
+      map((verifyOtpResult: string) => {
         console.log(verifyOtpResult);
-        if (verifyOtpResult) {
+        if (verifyOtpResult.includes('successfully')) {
           response.code = ResponseCodes.SUCCESS.code;
           response.message = ResponseCodes.SUCCESS.message;
           response.data = verifyOtpResult;
@@ -125,6 +125,7 @@ export class AuthController {
           response.code = ResponseCodes.AUTHENTICATION_FAILED.code;
           response.message = ResponseCodes.AUTHENTICATION_FAILED.message;
           response.data = verifyOtpResult;
+          throw new BadRequestException(response);
         }
         return response;
       }),

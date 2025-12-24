@@ -1,7 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { catchError, from, map, Observable, of, switchMap, tap } from 'rxjs';
+import {
+  catchError,
+  forkJoin,
+  from,
+  map,
+  Observable,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { User } from 'src/modules/user/models/user.entity';
 import { UserService } from 'src/modules/user/services/user.service';
 import { Repository } from 'typeorm';
@@ -11,6 +20,7 @@ import { PasswordResetRequest } from '../models/password-reset-request.entity';
 import { EmailService } from '@app/common/shared/services/email.service';
 import { QueueService } from '@app/common/shared/services/queue.service';
 import { ResetPasswordDto } from '../models/reset-password';
+import { SmsService } from '@app/common/shared/services/sms.service';
 
 const bcrypt = require('bcrypt');
 
@@ -31,6 +41,7 @@ export class AuthService {
     public readonly otpAuthenticationRepository: Repository<OtpAuthentication>,
     @Inject(UserService) public readonly userService: UserService,
     @Inject(EmailService) public readonly emailService: EmailService,
+    @Inject(SmsService) public readonly smsService: SmsService,
     private readonly queueService: QueueService,
     public readonly jwtService: JwtService,
     @InjectRepository(PasswordResetRequest)
@@ -148,40 +159,71 @@ export class AuthService {
     otp.otp = tempOtp;
     const createdOtp = this.otpAuthenticationRepository.create(otp);
     console.log(tempOtp);
-    return from(this.otpAuthenticationRepository.save(createdOtp));
+
+    const createOtpResult = from(
+      this.otpAuthenticationRepository.save(createdOtp),
+    );
+    const smsResult = this.smsService.sendOtpMessage(
+      otp.mobile_number,
+      tempOtp,
+    );
+
+    return createOtpResult.pipe(
+      tap(() => {
+        smsResult.subscribe({
+          error: (err) => console.error('SMS failed', err),
+        });
+      }),
+    );
   }
 
-  public verifyOtp(mobileNumber: string, otp: string): Observable<any> {
-    return from(this.findOtpByMobileNumber(mobileNumber)).pipe(
+  public verifyOtp(mobileNumber: string, otp: string): Observable<string> {
+    //const hashedOtp = this.hashOtp(otp);
+
+    return from(
+      this.otpAuthenticationRepository.findOne({
+        where: { mobile_number: mobileNumber },
+        order: { created_date: 'DESC' },
+      }),
+    ).pipe(
       switchMap((otpResult) => {
-        console.log(otpResult);
-        const hasOtpExpired = this.checkOtpExpiry(otpResult);
-        return of(hasOtpExpired);
-
-        if (!otpResult) {
-          return of(false);
-        }
-        if (otpResult.verify_attempts >= otpResult.max_verify_attempts) {
-          return of(false);
-        }
         otpResult.verify_attempts += 1;
+        if (!otpResult) {
+          return this.updateOtp(otpResult).pipe(map(() => 'Invalid OTP'));
+        }
 
-        return this.comparePasswords(otp, otpResult.otp).pipe(
-          switchMap((isValid) => {
-            if (!isValid) {
-              this.updateOtp(otpResult);
-              return of(false);
-            }
-            otpResult.status = 'verified';
-            this.updateOtp(otpResult);
-            return of(true);
-          }),
+        if (otpResult.status == 'verified') {
+          return this.updateOtp(otpResult).pipe(
+            map(() => 'OTP already verified'),
+          );
+        }
+
+        this.comparePasswords(otp, otpResult.otp).subscribe((isValid) => {
+          if (!isValid) {
+            return this.updateOtp(otpResult).pipe(map(() => 'Invalid OTP'));
+          }
+        });
+
+        if (this.checkOtpExpiry(otpResult)) {
+          otpResult.status = 'expired';
+          return this.updateOtp(otpResult).pipe(map(() => 'OTP has expired'));
+        }
+
+        if (otpResult.verify_attempts >= otpResult.max_verify_attempts) {
+          return this.updateOtp(otpResult).pipe(
+            map(() => 'Maximum attempts reached'),
+          );
+        }
+
+        otpResult.status = 'verified';
+        return this.updateOtp(otpResult).pipe(
+          map(() => 'OTP verified successfully'),
         );
       }),
     );
   }
 
-  checkOtpExpiry(otp: OtpAuthentication): Observable<boolean> {
+  checkOtpExpiry1(otp: OtpAuthentication): Observable<boolean> {
     from(
       this.otpAuthenticationRepository.query(
         'SELECT CURRENT_TIMESTAMP() AS now;',
@@ -198,22 +240,13 @@ export class AuthService {
         return of(currentDate > otpExpiryDate);
       }),
     );
+    return of(false);
+  }
 
-    // .then((result) => {
-    //     let currentDate = new Date(result[0].now);
-    //     console.log('currentDate: ' + currentDate);
-    //     console.log('created_date: ' + otp.created_date);
-    //     let otpExpiry = otp.expiry;
-    //     let otpExpiryDate = dateAdd(
-    //       new Date(otp.created_date),
-    //       'minute',
-    //       otpExpiry,
-    //     );
-    //     console.log('otpExpiryDate : ' + otpExpiryDate);
-    //     return currentDate > otpExpiryDate;
-    //   });
-
-    return of(true);
+  checkOtpExpiry(otp: OtpAuthentication): boolean {
+    const createdAt = new Date(otp.created_date);
+    const expiresAt = new Date(createdAt.getTime() + otp.expiry * 60_000);
+    return new Date() > expiresAt;
   }
 
   public updateOtp = (otp: OtpAuthentication) =>

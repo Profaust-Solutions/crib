@@ -8,10 +8,13 @@ import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 import { BullModule } from '@nestjs/bullmq';
 import { QueueService } from './services/queue.service';
 import { RelativeTimePipe } from './pipes/relative-time.pipe';
+import { SmsService } from './services/sms.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
     ConfigModule,
+    HttpModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -41,21 +44,21 @@ import { RelativeTimePipe } from './pipes/relative-time.pipe';
       }),
       inject: [ConfigService],
     }),
-    BullModule.registerQueue({
-      name: 'email',
-      connection: {
-        url: process.env.REDIS_URL,
-      },
+    // BullModule.registerQueue({
+    //   name: 'email',
+    //   connection: {
+    //     url: process.env.REDIS_URL,
+    //   },
 
-      defaultJobOptions: {
-        priority: 1, // Set default priority
-        attempts: 3, // Retry 3 times if failed
-        backoff: { type: 'exponential', delay: 5000 }, // Exponential backoff for retries
-        removeOnComplete: true, // Remove the job when completed
-        removeOnFail: true, // Remove the job when it fails
-        //timeout: 60000, // Set timeout for job execution
-      },
-    }),
+    //   defaultJobOptions: {
+    //     priority: 1, // Set default priority
+    //     attempts: 3, // Retry 3 times if failed
+    //     backoff: { type: 'exponential', delay: 5000 }, // Exponential backoff for retries
+    //     removeOnComplete: true, // Remove the job when completed
+    //     removeOnFail: true, // Remove the job when it fails
+    //     //timeout: 60000, // Set timeout for job execution
+    //   },
+    // }),
   ],
   providers: [
     AuthTokenGuard,
@@ -63,6 +66,7 @@ import { RelativeTimePipe } from './pipes/relative-time.pipe';
     EmailService,
     QueueService,
     RelativeTimePipe,
+    SmsService,
   ],
   exports: [
     AuthTokenGuard,
@@ -70,6 +74,7 @@ import { RelativeTimePipe } from './pipes/relative-time.pipe';
     EmailService,
     QueueService,
     RelativeTimePipe,
+    SmsService,
   ],
 })
 export class SharedModule {}
