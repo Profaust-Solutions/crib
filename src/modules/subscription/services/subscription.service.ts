@@ -40,7 +40,9 @@ export class SubscriptionService {
   public findUserSubscriptions(userId: string,options: IPaginationOptions){
     return from(
       paginate<Subscription>(this.subscriptionRepository, options, {
-        user_id: userId,
+        where: {
+          user_id: userId,
+        },
         relations: ['plan'],
       }),
     );

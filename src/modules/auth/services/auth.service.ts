@@ -75,6 +75,7 @@ export class AuthService {
             return this.generateAccessToken(jwtUser).pipe(
               switchMap((token) => {
                 jwtUser['token'] = token;
+               const refresh_code = this.generateOtp(10);
                 return of(jwtUser);
               }),
             );
@@ -172,7 +173,7 @@ export class AuthService {
       this.smsService.sendOtpMessage(otp.mobile_number, tempOtp),
       of('do not send sms in dev mode'),
     );
-    this.smsService.sendOtpMessage(otp.mobile_number, tempOtp);
+   // this.smsService.sendOtpMessage(otp.mobile_number, tempOtp);
 
     return createOtpResult.pipe(
       tap(() => {

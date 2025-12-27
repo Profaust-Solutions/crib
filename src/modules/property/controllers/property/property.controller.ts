@@ -11,6 +11,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { PropertyService } from '../../services/property/property.service';
 import {
@@ -24,6 +25,7 @@ import { ApartmentService } from '../../services/apartment/apartment.service';
 import { Apartment } from '../../models/apartment.entity';
 import { TenantService } from '../../services/tenant/tenant.service';
 import { Tenant } from '../../models/apartment_tenant.entity';
+import { AuthTokenGuard } from '@app/common/shared/guards/auth-token.guard';
 
 @Controller('properties')
 export class PropertyController {
@@ -261,7 +263,7 @@ export class PropertyController {
     );
   }
 
-  //@UseGuards(AuthTokenGuard)
+  @UseGuards(AuthTokenGuard)
   @Get('apartment/:apartmentId')
   //@AuditLog('Get Property')
   @Header('Cache-Control', 'none')

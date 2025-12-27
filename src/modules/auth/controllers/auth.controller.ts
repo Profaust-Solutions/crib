@@ -11,6 +11,8 @@ import {
   HttpCode,
   BadRequestException,
   UnauthorizedException,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 import { UserService } from 'src/modules/user/services/user.service';
@@ -19,6 +21,7 @@ import { AuthService } from '../services/auth.service';
 import { OtpAuthentication } from '../models/otp-authentication.entity';
 import { PasswordResetRequest } from '../models/password-reset-request.entity';
 import { ResetPasswordDto } from '../models/reset-password';
+import { AuthTokenGuard } from '@app/common/shared/guards/auth-token.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -60,12 +63,13 @@ export class AuthController {
   }
 
   @Post('refreshtoken')
+  @UseGuards(AuthTokenGuard)
   //@AuditLog('Refresh Token')
   @Header('Cache-Control', 'none')
-  refreshToken(@Body() data: any): Observable<ApiResponse> {
+  refreshToken(@Body() data: any, @Req() request): Observable<ApiResponse> {
     let response = new ApiResponse();
-    const id = data.id;
-    const refreshTokenResult$ = this.authService.refreshToken(id);
+    const refreshCode = data.refresh_code;
+    const refreshTokenResult$ = this.authService.refreshToken(refreshCode);
     return refreshTokenResult$.pipe(
       map((loginResult: any) => {
         if (loginResult) {

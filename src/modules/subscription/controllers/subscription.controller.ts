@@ -98,6 +98,7 @@ export class SubscriptionController {
   ): Observable<ApiResponse> {
     let response = new ApiResponse();
     const userId = request.user['id'];
+    console.log('userId: ' + userId);
     return this.subscriptionService
       .findUserSubscriptions(userId, { page, limit })
       .pipe(
